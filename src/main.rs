@@ -9,7 +9,10 @@ fn main() {
     let values = args_manager::get_values(&args);
 
     if !values.is_empty() {
-        println!("Hello, world {:?}", values.len());
+        for arg in &values  {
+            print!("key -> {:?};", arg.0);
+            println!(" value -> {:?};", arg.1)
+        }
     } else {
         println!("sem argumentos validos {:?}", values.len());
     }

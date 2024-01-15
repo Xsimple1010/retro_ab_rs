@@ -1,22 +1,17 @@
-pub struct ArgValue {
-    key: String,
-    value: String,
-}
+use std::collections::HashMap;
 
-fn get_key_and_value<'a>(arg:&'a str) -> ArgValue {
-    let mut values: ArgValue = ArgValue { 
-        key: (String::from("")), 
-        value: (String::from("")) 
-    };
+fn get_key_and_value<'a>(arg:&'a str) -> (String, String) {
+    let mut values = (String::from(""), String::from(""));
 
 
     if arg.starts_with("--") {
         let key_and_value = arg.replace("--", "");
     
-        let k:Vec<&str> = key_and_value.rsplit("=").collect();
+        let k_v:Vec<&str> = key_and_value.rsplit("=").collect();
         
-        values.key = k[0].to_string();
-        values.value = k[1].to_string();
+        values.0 = k_v[1].to_string();
+        
+        values.1 = k_v[0].to_string();
     }
 
 
@@ -24,23 +19,23 @@ fn get_key_and_value<'a>(arg:&'a str) -> ArgValue {
     values
 }
 
-pub fn get_values(args:&Vec<String>) -> Vec<ArgValue> {
-    let mut values: Vec<ArgValue> = Vec::new();
+pub fn get_values(args:&Vec<String>) -> HashMap<String, String> {
+    let mut values: HashMap<String, String> = HashMap::new();
 
     for arg in args {
         if arg.contains(&"--core=") {
             let value = get_key_and_value(arg);
 
-            if !value.key.is_empty() {
-                values.push(value);
+            if !value.0.is_empty() {
+                values.insert(value.0, value.1);
             }
         }
 
         if arg.contains(&"--rom=") {
             let value = get_key_and_value(arg);
 
-            if !value.key.is_empty() {
-                values.push(value);
+            if !value.0.is_empty() {
+                values.insert(value.0, value.1);
             }
         }
     }
