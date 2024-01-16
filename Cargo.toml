@@ -8,4 +8,6 @@ edition = "2021"
 [dependencies]
 sdl2 = "0.36.0"
 libloading = "0.8.1"
-rust-libretro-sys = "0.3.2"
+
+[build-dependencies]
+bindgen = "0.69.2"

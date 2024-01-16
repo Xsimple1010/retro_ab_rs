@@ -1,21 +1,18 @@
-use std::env;
 use std::collections::HashMap;
+use std::env;
 
-fn get_key_and_value<'a>(arg:&'a str) -> (String, String) {
+fn get_key_and_value<'a>(arg: &'a str) -> (String, String) {
     let mut values = (String::from(""), String::from(""));
-
 
     if arg.starts_with("--") {
         let key_and_value = arg.replace("--", "");
-    
-        let k_v:Vec<&str> = key_and_value.rsplit("=").collect();
-        
+
+        let k_v: Vec<&str> = key_and_value.rsplit("=").collect();
+
         values.0 = k_v[1].to_string();
-        
+
         values.1 = k_v[0].to_string();
     }
-
-
 
     values
 }

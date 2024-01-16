@@ -2,27 +2,27 @@ extern crate sdl2;
 mod args_manager;
 mod libretro;
 
-extern  crate rust_libretro_sys;
-
 fn main() {
-
     let values = args_manager::get_values();
 
     if !values.is_empty() {
-        for arg in &values  {
-            print!("key -> {:?};", arg.0);
-            println!(" value -> {:?};", arg.1);
+        for (key, value) in &values {
+            print!("key -> {:?};", key);
+            println!(" value -> {:?};", value);
 
-            if arg.0 == "core" {
-                let core = libretro::core::load(arg.1);
+            if key == "core" {
+                let libretro_raw = libretro::core::load(value);
 
-                let version = core.api_version();
-                println!("{:?}", version);
+                match libretro_raw {
+                    Ok(libretro) => unsafe {
+                        let v = libretro.retro_api_version();
+                        println!("{:?}", v);
+                    },
+                    Err(_) => {}
+                }
             }
-
         }
     } else {
         println!("sem argumentos validos {:?}", values.len());
     }
-
 }
