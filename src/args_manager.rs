@@ -1,3 +1,4 @@
+use std::env;
 use std::collections::HashMap;
 
 fn get_key_and_value<'a>(arg:&'a str) -> (String, String) {
@@ -19,12 +20,14 @@ fn get_key_and_value<'a>(arg:&'a str) -> (String, String) {
     values
 }
 
-pub fn get_values(args:&Vec<String>) -> HashMap<String, String> {
+pub fn get_values() -> HashMap<String, String> {
+    let args: Vec<String> = env::args().collect();
+
     let mut values: HashMap<String, String> = HashMap::new();
 
     for arg in args {
         if arg.contains(&"--core=") {
-            let value = get_key_and_value(arg);
+            let value = get_key_and_value(&arg);
 
             if !value.0.is_empty() {
                 values.insert(value.0, value.1);
@@ -32,7 +35,7 @@ pub fn get_values(args:&Vec<String>) -> HashMap<String, String> {
         }
 
         if arg.contains(&"--rom=") {
-            let value = get_key_and_value(arg);
+            let value = get_key_and_value(&arg);
 
             if !value.0.is_empty() {
                 values.insert(value.0, value.1);
