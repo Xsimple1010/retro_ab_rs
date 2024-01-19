@@ -19,8 +19,6 @@ pub struct Callbacks {
 }
 
 pub struct CoreWrapper {
-    raw: LibretroRaw,
-
     pub can_dupe: bool,
     pub had_frame: bool,
     pub last_width: u32,
@@ -33,42 +31,52 @@ pub struct CoreWrapper {
 }
 
 impl CoreWrapper {
-    pub fn rum(&self) {
+    pub fn run(&self) {
         unsafe {
-            self.raw.retro_run();
+            match &RAW {
+                Some(raw) => raw.retro_run(),
+                None => {}
+            }
         }
     }
 
     pub fn de_init(&self) {
         unsafe {
-            self.raw.retro_deinit();
+            match &RAW {
+                Some(raw) => raw.retro_deinit(),
+                None => {}
+            }
         }
     }
 
     pub fn version(&self) -> u32 {
-        unsafe { self.raw.retro_api_version() }
+        unsafe {
+            match &RAW {
+                Some(raw) => raw.retro_api_version(),
+                None => 0,
+            }
+        }
     }
 
     pub fn init(&self) {
-        unsafe { self.raw.retro_init() }
+        unsafe {
+            match &RAW {
+                Some(raw) => raw.retro_init(),
+                None => {}
+            }
+        }
     }
 }
 
-pub fn load(path: &String, callbacks: &Callbacks) -> Result<CoreWrapper, ::libloading::Error> {
+static mut RAW: Option<LibretroRaw> = None;
+
+pub fn load(path: &String, callbacks: &Callbacks) -> Result<&'static CoreWrapper, String> {
     unsafe {
         let result = LibretroRaw::new(path);
 
         match result {
             Ok(libretro_raw) => {
-                libretro_raw.retro_set_audio_sample(callbacks.audio_sample_callback);
-                libretro_raw.retro_set_audio_sample_batch(callbacks.audio_sample_batch_callback);
-                libretro_raw.retro_set_video_refresh(callbacks.video_refresh_callback);
-                libretro_raw.retro_set_input_poll(callbacks.input_poll_callback);
-                libretro_raw.retro_set_input_state(callbacks.input_state_callback);
-                libretro_raw.retro_set_environment(Some(environment::core_environment));
-
                 let core_wrapper = CoreWrapper {
-                    raw: libretro_raw,
                     can_dupe: false,
                     frame_delta: Some(0),
                     had_frame: false,
@@ -78,9 +86,28 @@ pub fn load(path: &String, callbacks: &Callbacks) -> Result<CoreWrapper, ::liblo
                     supports_bitmasks: false,
                 };
 
-                Ok(core_wrapper)
+                //configure all needed callbacks
+                RAW = Some(libretro_raw);
+                let core_wrapper = environment::configure(core_wrapper);
+
+                match &RAW {
+                    Some(raw) => {
+                        raw.retro_set_environment(Some(environment::core_environment));
+                        raw.retro_set_audio_sample(callbacks.audio_sample_callback);
+                        raw.retro_set_audio_sample_batch(callbacks.audio_sample_batch_callback);
+                        raw.retro_set_video_refresh(callbacks.video_refresh_callback);
+                        raw.retro_set_input_poll(callbacks.input_poll_callback);
+                        raw.retro_set_input_state(callbacks.input_state_callback);
+                    }
+                    None => {}
+                }
+
+                match core_wrapper {
+                    Ok(core) => Ok(core),
+                    Err(e) => Err(e),
+                }
             }
-            Err(e) => Err(e),
+            Err(e) => Err(String::from("Erro ao carregar o núcleo: ")),
         }
     }
 }

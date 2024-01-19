@@ -1,10 +1,38 @@
-use super::binding_libretro::*;
+use super::{binding_libretro::*, core::CoreWrapper};
 use ::std::os::raw;
+
+struct _Environment {
+    core: Box<CoreWrapper>,
+}
+
+static mut ENVIRONMENT: Option<_Environment> = None;
+
+pub fn configure(core_wrapper: CoreWrapper) -> Result<&'static CoreWrapper, String> {
+    let core_wrapper = Box::new(core_wrapper);
+
+    unsafe {
+        ENVIRONMENT = Some(_Environment { core: core_wrapper });
+
+        match &ENVIRONMENT {
+            Some(env) => Ok(env.core.as_ref()),
+            None => Err(String::from("value")),
+        }
+    }
+}
 
 pub unsafe extern "C" fn core_environment(
     cmd: ::std::os::raw::c_uint,
     data: *mut raw::c_void,
 ) -> bool {
+    match &ENVIRONMENT {
+        Some(env) => {
+            println!("version is -> {:?}", env.core.version());
+        }
+        None => {
+            println!("none version");
+        }
+    }
+
     match cmd {
         RETRO_ENVIRONMENT_GET_CORE_OPTIONS_VERSION => {
             // data = 2;

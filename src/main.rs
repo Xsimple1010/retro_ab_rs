@@ -4,28 +4,28 @@ mod libretro;
 
 use ::std::os::raw;
 
-unsafe extern "C" fn audio_sample_callback(left: i16, right: i16) {}
+unsafe extern "C" fn audio_sample_callback(_left: i16, _right: i16) {}
 
-unsafe extern "C" fn audio_sample_batch_callback(data: *const i16, frames: usize) -> usize {
+unsafe extern "C" fn audio_sample_batch_callback(_data: *const i16, frames: usize) -> usize {
     frames
 }
 
 unsafe extern "C" fn input_poll_callback() {}
 
 unsafe extern "C" fn input_state_callback(
-    port: raw::c_uint,
-    device: raw::c_uint,
-    index: raw::c_uint,
-    id: raw::c_uint,
+    _port: raw::c_uint,
+    _device: raw::c_uint,
+    _index: raw::c_uint,
+    _id: raw::c_uint,
 ) -> i16 {
     0
 }
 
 unsafe extern "C" fn video_refresh_callback(
-    data: *const raw::c_void,
-    width: raw::c_uint,
-    height: raw::c_uint,
-    pitch: usize,
+    _data: *const raw::c_void,
+    _width: raw::c_uint,
+    _height: raw::c_uint,
+    _pitch: usize,
 ) {
 }
 
@@ -59,7 +59,7 @@ fn main() {
                             libretro.de_init();
                         }
                     }
-                    Err(_) => {}
+                    Err(e) => println!("{:?}", e),
                 }
             }
         }
