@@ -1,23 +1,79 @@
-use super::{binding_libretro::*, core::CoreWrapper};
+use super::{
+    binding_libretro::*,
+    core::{CoreCallbacks, CoreWrapper},
+};
 use ::std::os::raw;
 
 struct _Environment {
     core: Box<CoreWrapper>,
+    callbacks: Box<CoreCallbacks>,
 }
 
 static mut ENVIRONMENT: Option<_Environment> = None;
 
-pub fn configure(core_wrapper: CoreWrapper) -> Result<&'static CoreWrapper, String> {
+pub fn configure(
+    core_wrapper: CoreWrapper,
+    callback: CoreCallbacks,
+) -> Result<&'static CoreWrapper, String> {
     let core_wrapper = Box::new(core_wrapper);
 
     unsafe {
-        ENVIRONMENT = Some(_Environment { core: core_wrapper });
+        ENVIRONMENT = Some(_Environment {
+            core: core_wrapper,
+            callbacks: Box::new(callback),
+        });
 
         match &ENVIRONMENT {
             Some(env) => Ok(env.core.as_ref()),
             None => Err(String::from("value")),
         }
     }
+}
+
+pub unsafe extern "C" fn audio_sample_callback(left: i16, right: i16) {
+    match &ENVIRONMENT {
+        Some(env) => (env.callbacks.audio_sample_callback)(left, right),
+        None => {}
+    }
+}
+
+pub unsafe extern "C" fn audio_sample_batch_callback(_data: *const i16, frames: usize) -> usize {
+    match &ENVIRONMENT {
+        Some(env) => (env.callbacks.audio_sample_batch_callback)(_data, frames),
+        None => frames,
+    }
+}
+
+pub unsafe extern "C" fn input_poll_callback() {
+    match &ENVIRONMENT {
+        Some(env) => (env.callbacks.input_poll_callback)(),
+        None => {}
+    }
+}
+
+pub unsafe extern "C" fn input_state_callback(
+    _port: raw::c_uint,
+    _device: raw::c_uint,
+    _index: raw::c_uint,
+    _id: raw::c_uint,
+) -> i16 {
+    match &ENVIRONMENT {
+        Some(env) => (env.callbacks.input_state_callback)(
+            _port as i16,
+            _device as i16,
+            _index as i16,
+            _id as i16,
+        ),
+        None => 0,
+    }
+}
+
+pub unsafe extern "C" fn video_refresh_callback(
+    _data: *const raw::c_void,
+    _width: raw::c_uint,
+    _height: raw::c_uint,
+    _pitch: usize,
+) {
 }
 
 pub unsafe extern "C" fn core_environment(
@@ -34,6 +90,9 @@ pub unsafe extern "C" fn core_environment(
     }
 
     match cmd {
+        RETRO_ENVIRONMENT_SET_SUPPORT_NO_GAME => {
+            println!("RETRO_ENVIRONMENT_SET_SUPPORT_NO_GAME");
+        }
         RETRO_ENVIRONMENT_GET_CORE_OPTIONS_VERSION => {
             // data = 2;
             println!("RETRO_ENVIRONMENT_GET_CORE_OPTIONS_VERSION");

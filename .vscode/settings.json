@@ -1,6 +1,7 @@
 {
     "cSpell.words": [
         "bitmasks",
+        "deinit",
         "libloading",
         "libretro"
     ]
