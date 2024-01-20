@@ -1,10 +1,10 @@
-use std::ffi::c_void;
+use std::{ffi::c_void, rc::Rc};
 
 use crate::libretro::binding_libretro::{retro_system_av_info, retro_system_info};
 
 use super::{
     binding_libretro::{retro_game_info, LibretroRaw},
-    environment,
+    environment, game_tools,
 };
 
 pub struct CoreCallbacks {
@@ -72,33 +72,7 @@ impl CoreWrapper {
     pub fn load_game(&self, path: String) {
         unsafe {
             match &RAW {
-                Some(raw) => {
-                    const DATA: *const c_void = std::ptr::null();
-                    let sys_av_info: *mut retro_system_info = &mut retro_system_info {
-                        block_extract: false,
-                        need_fullpath: false,
-                        library_name: "".as_ptr() as *const i8,
-                        library_version: "".as_ptr() as *const i8,
-                        valid_extensions: "".as_ptr() as *const i8,
-                    };
-
-                    let game_info: *mut retro_game_info = &mut retro_game_info {
-                        data: DATA,
-                        meta: "".as_ptr() as *const i8,
-                        path: path.as_ptr() as *const i8,
-                        size: 0,
-                    };
-
-                    println!("{:?}", path);
-
-                    raw.retro_get_system_info(sys_av_info);
-
-                    if sys_av_info.read().need_fullpath {
-                        println!("fullpath sim");
-                    }
-
-                    // let av_info = raw.retro_load_game(game_info);
-                }
+                Some(raw) => game_tools::load(raw, &path),
                 None => {}
             }
         }
@@ -107,7 +81,7 @@ impl CoreWrapper {
 
 static mut RAW: Option<LibretroRaw> = None;
 
-pub fn load(path: &String, callbacks: CoreCallbacks) -> Result<&'static CoreWrapper, String> {
+pub fn load(path: &String, callbacks: CoreCallbacks) -> Result<Rc<CoreWrapper>, String> {
     unsafe {
         let result = LibretroRaw::new(path);
 

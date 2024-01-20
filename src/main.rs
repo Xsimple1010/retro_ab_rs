@@ -1,4 +1,6 @@
-use libretro::core::CoreWrapper;
+use std::rc::Rc;
+
+use libretro::core::{CoreCallbacks, CoreWrapper};
 
 extern crate sdl2;
 mod args_manager;
@@ -28,46 +30,53 @@ fn video_refresh_callback(
 
 fn main() {
     let values = args_manager::get_values();
+    let callbacks: CoreCallbacks = CoreCallbacks {
+        audio_sample_callback: audio_sample_callback,
+        audio_sample_batch_callback: audio_sample_batch_callback,
+        input_poll_callback: input_poll_callback,
+        input_state_callback: input_state_callback,
+        video_refresh_callback: video_refresh_callback,
+    };
 
-    if !values.is_empty() {
-        let mut core_wrapper: Option<&CoreWrapper> = None;
+    let mut core_wrapper: Option<Rc<CoreWrapper>> = None;
 
-        for (key, value) in &values {
-            print!("key -> {:?};", key);
-            println!(" value -> {:?};", value);
+    if values.contains_key("core") {
+        let value = values.get("core");
 
-            if key == "core" {
-                let callbacks = libretro::core::CoreCallbacks {
-                    audio_sample_callback: audio_sample_callback,
-                    audio_sample_batch_callback: audio_sample_batch_callback,
-                    input_poll_callback: input_poll_callback,
-                    input_state_callback: input_state_callback,
-                    video_refresh_callback: video_refresh_callback,
-                };
+        match value {
+            Some(path) => {
+                let result = libretro::core::load(path, callbacks);
 
-                let result = libretro::core::load(value, callbacks);
                 match result {
-                    Ok(libretro) => {
-                        core_wrapper = Some(libretro);
-                        let v = core_wrapper.expect("erro").version();
+                    Ok(core) => {
+                        core_wrapper = Some(core);
 
-                        println!("{:?}", v);
+                        let v = core_wrapper
+                            .as_ref()
+                            .expect("erro ao reconhecer a versao do core")
+                            .version();
 
-                        if v == 1 {
-                            core_wrapper.expect("erro").init();
-                        }
+                        println!("core version -> {:?}", v);
                     }
-                    Err(e) => println!("{:?}", e),
+                    Err(e) => println!("{e}"),
                 }
             }
-
-            if key == "rom" {
-                core_wrapper.expect("msg").load_game(value.to_owned());
-            }
+            _ => {}
         }
+    }
 
-        core_wrapper.expect("msg").de_init();
-    } else {
-        println!("sem argumentos validos {:?}", values.len());
+    if values.contains_key("rom") {
+        let value = values.get("core");
+
+        match value {
+            Some(path) => {
+                let v = core_wrapper
+                    .as_ref()
+                    .expect("erro ao carrega a rom")
+                    .version();
+                println!("core version -> {:?}", v);
+            }
+            _ => {}
+        }
     }
 }

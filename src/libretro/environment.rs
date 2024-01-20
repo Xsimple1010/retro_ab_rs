@@ -3,10 +3,11 @@ use super::{
     core::{CoreCallbacks, CoreWrapper},
 };
 use ::std::os::raw;
+use std::{alloc::GlobalAlloc, rc::Rc};
 
 struct _Environment {
-    core: Box<CoreWrapper>,
-    callbacks: Box<CoreCallbacks>,
+    core: Rc<CoreWrapper>,
+    callbacks: Rc<CoreCallbacks>,
 }
 
 static mut ENVIRONMENT: Option<_Environment> = None;
@@ -14,17 +15,17 @@ static mut ENVIRONMENT: Option<_Environment> = None;
 pub fn configure(
     core_wrapper: CoreWrapper,
     callback: CoreCallbacks,
-) -> Result<&'static CoreWrapper, String> {
-    let core_wrapper = Box::new(core_wrapper);
-
+) -> Result<Rc<CoreWrapper>, String> {
     unsafe {
+        let core = Rc::new(core_wrapper);
+
         ENVIRONMENT = Some(_Environment {
-            core: core_wrapper,
-            callbacks: Box::new(callback),
+            core: core.clone(),
+            callbacks: Rc::new(callback),
         });
 
         match &ENVIRONMENT {
-            Some(env) => Ok(env.core.as_ref()),
+            Some(_) => Ok(core),
             None => Err(String::from("value")),
         }
     }
