@@ -51,12 +51,18 @@ fn main() {
                     Ok(core) => {
                         core_wrapper = Some(core);
 
+                        // core_wrapper.as_mut().expect("erro ao trocar o valor").support_no_game = truel;
                         let v = core_wrapper
                             .as_ref()
-                            .expect("erro ao reconhecer a versao do core")
+                            .expect("erro ao reconhecer a versão do núcleo")
                             .version();
 
                         println!("core version -> {:?}", v);
+
+                        core_wrapper
+                            .as_ref()
+                            .expect("erro ao iniciar o núcleo")
+                            .init();
                     }
                     Err(e) => println!("{e}"),
                 }
@@ -69,14 +75,18 @@ fn main() {
         let value = values.get("core");
 
         match value {
-            Some(path) => {
-                let v = core_wrapper
+            Some(_path) => {
+                core_wrapper
                     .as_ref()
                     .expect("erro ao carrega a rom")
-                    .version();
-                println!("core version -> {:?}", v);
+                    .load_game(_path.to_owned());
             }
             _ => {}
         }
     }
+
+    core_wrapper
+        .as_ref()
+        .expect("erro ao para o núcleo")
+        .de_init();
 }
