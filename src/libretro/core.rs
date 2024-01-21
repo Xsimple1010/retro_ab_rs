@@ -1,6 +1,4 @@
-use std::{ffi::c_void, rc::Rc};
-
-use crate::libretro::binding_libretro::{retro_system_av_info, retro_system_info};
+use std::rc::Rc;
 
 use super::{
     binding_libretro::{retro_game_info, LibretroRaw},
@@ -20,7 +18,7 @@ pub struct CoreCallbacks {
     pub input_state_callback: fn(port: i16, device: i16, index: i16, id: i16) -> i16,
 }
 
-pub struct CoreWrapper {
+pub struct Video {
     pub can_dupe: bool,
     pub had_frame: bool,
     pub last_width: u32,
@@ -30,6 +28,11 @@ pub struct CoreWrapper {
     pub supports_bitmasks: bool,
 
     pub frame_delta: Option<i64>,
+}
+
+pub struct CoreWrapper {
+    pub video: Video,
+    pub support_no_game: bool,
 }
 
 impl CoreWrapper {
@@ -88,13 +91,16 @@ pub fn load(path: &String, callbacks: CoreCallbacks) -> Result<Rc<CoreWrapper>, 
         match result {
             Ok(libretro_raw) => {
                 let core_wrapper = CoreWrapper {
-                    can_dupe: false,
-                    frame_delta: Some(0),
-                    had_frame: false,
-                    last_height: 0,
-                    last_width: 0,
-                    last_pitch: 0,
-                    supports_bitmasks: false,
+                    support_no_game: false,
+                    video: Video {
+                        can_dupe: false,
+                        frame_delta: Some(0),
+                        had_frame: false,
+                        last_height: 0,
+                        last_width: 0,
+                        last_pitch: 0,
+                        supports_bitmasks: false,
+                    },
                 };
 
                 //configure all needed callbacks

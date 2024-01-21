@@ -3,7 +3,7 @@ use super::{
     core::{CoreCallbacks, CoreWrapper},
 };
 use ::std::os::raw;
-use std::{alloc::GlobalAlloc, rc::Rc};
+use std::rc::Rc;
 
 struct _Environment {
     core: Rc<CoreWrapper>,
@@ -79,7 +79,7 @@ pub unsafe extern "C" fn video_refresh_callback(
 
 pub unsafe extern "C" fn core_environment(
     cmd: ::std::os::raw::c_uint,
-    data: *mut raw::c_void,
+    _data: *mut raw::c_void,
 ) -> bool {
     match &ENVIRONMENT {
         Some(env) => {
