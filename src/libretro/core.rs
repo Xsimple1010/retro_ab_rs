@@ -1,4 +1,7 @@
-use super::{binding_libretro::LibretroRaw, environment, game_tools};
+use super::{
+    binding_libretro::{retro_language, retro_pixel_format, LibretroRaw},
+    environment, game_tools,
+};
 
 pub struct CoreCallbacks {
     pub video_refresh_callback:
@@ -21,7 +24,7 @@ pub struct Video {
     pub last_pitch: usize,
 
     pub supports_bitmasks: bool,
-
+    pub pixel_format: retro_pixel_format,
     pub frame_delta: Option<i64>,
 }
 
@@ -29,6 +32,7 @@ pub struct CoreWrapper {
     pub video: Video,
     pub support_no_game: bool,
     pub use_subsystem: bool,
+    pub language: retro_language,
 }
 
 static mut RAW: Option<LibretroRaw> = None;
@@ -90,6 +94,7 @@ pub fn load(
                 let core_wrapper = CoreWrapper {
                     support_no_game: false,
                     use_subsystem: false,
+                    language: retro_language::RETRO_LANGUAGE_TURKISH,
                     video: Video {
                         can_dupe: false,
                         frame_delta: Some(0),
@@ -97,6 +102,7 @@ pub fn load(
                         last_height: 0,
                         last_width: 0,
                         last_pitch: 0,
+                        pixel_format: retro_pixel_format::RETRO_PIXEL_FORMAT_UNKNOWN,
                         supports_bitmasks: false,
                     },
                 };
@@ -124,7 +130,7 @@ pub fn load(
                     Err(e) => Err(e),
                 }
             }
-            Err(e) => Err(String::from("Erro ao carregar o núcleo: ")),
+            Err(_) => Err(String::from("Erro ao carregar o núcleo: ")),
         }
     }
 }

@@ -49,27 +49,13 @@ fn main() {
                     Ok(core) => {
                         _core_ctx = Some(core);
 
-                        let v = libretro::core::version();
-
-                        println!("core version -> {:?}", v);
-
-                        libretro::core::init();
+                        // libretro::core::init();
                     }
                     Err(e) => println!("{e}"),
                 }
             }
             _ => {}
         }
-    }
-
-    match _core_ctx {
-        Some(ctx) => {
-            println!(
-                "core is using a subsystem -> {:?}",
-                ctx.core.borrow().use_subsystem
-            );
-        }
-        None => {}
     }
 
     if values.contains_key("rom") {
@@ -81,6 +67,17 @@ fn main() {
             }
             _ => {}
         }
+    }
+
+    match _core_ctx {
+        Some(ctx) => {
+            println!("=======core context=======");
+            println!("core version -> {:?}", libretro::core::version());
+            println!("subsystem -> {:?}", ctx.core.borrow().use_subsystem);
+            println!("pixel format -> {:?}", ctx.core.borrow().video.pixel_format);
+            println!("language -> {:?}", ctx.core.borrow().language);
+        }
+        None => {}
     }
 
     libretro::core::de_init();

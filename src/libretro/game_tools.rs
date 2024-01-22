@@ -11,7 +11,7 @@ pub fn load(raw: &LibretroRaw, path: &String) {
         valid_extensions: "".as_ptr() as *const i8,
     };
 
-    let game_info: *mut retro_game_info = &mut retro_game_info {
+    let _game_info: *mut retro_game_info = &mut retro_game_info {
         data: std::ptr::null(),
         meta: "".as_ptr() as *const i8,
         path: path.as_ptr() as *const i8,

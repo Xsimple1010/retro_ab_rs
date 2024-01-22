@@ -81,10 +81,19 @@ pub unsafe extern "C" fn core_environment(
 ) -> bool {
     match cmd {
         RETRO_ENVIRONMENT_SET_SUPPORT_NO_GAME => {
-            println!("RETRO_ENVIRONMENT_SET_SUPPORT_NO_GAME");
+            println!("RETRO_ENVIRONMENT_SET_SUPPORT_NO_GAME -> ok");
+
+            match &CONTEXT {
+                Some(ctx) => {
+                    ctx.core.borrow_mut().support_no_game = *(_data as *mut bool);
+                }
+                None => {}
+            }
+
+            return true;
         }
         RETRO_ENVIRONMENT_GET_CORE_OPTIONS_VERSION => {
-            println!("RETRO_ENVIRONMENT_GET_CORE_OPTIONS_VERSION");
+            println!("RETRO_ENVIRONMENT_GET_CORE_OPTIONS_VERSION -> ok");
             *(_data as *mut usize) = 2;
             return true;
         }
@@ -92,13 +101,29 @@ pub unsafe extern "C" fn core_environment(
             println!("RETRO_ENVIRONMENT_SET_CORE_OPTIONS_V2_INTL");
         }
         RETRO_ENVIRONMENT_GET_LANGUAGE => {
-            println!("RETRO_ENVIRONMENT_GET_LANGUAGE");
+            println!("RETRO_ENVIRONMENT_GET_LANGUAGE -> ok");
+            *(_data as *mut retro_language) = retro_language::RETRO_LANGUAGE_ENGLISH;
+            match &CONTEXT {
+                Some(ctx) => {
+                    ctx.core.borrow_mut().language = *(_data as *mut retro_language);
+                }
+                None => {}
+            }
+            return true;
         }
         RETRO_ENVIRONMENT_SET_GEOMETRY => {
             println!("RETRO_ENVIRONMENT_SET_GEOMETRY");
         }
         RETRO_ENVIRONMENT_SET_PIXEL_FORMAT => {
-            println!("RETRO_ENVIRONMENT_SET_PIXEL_FORMAT");
+            println!("RETRO_ENVIRONMENT_SET_PIXEL_FORMAT -> ok");
+
+            match &CONTEXT {
+                Some(ctx) => {
+                    ctx.core.borrow_mut().video.pixel_format = *(_data as *mut retro_pixel_format);
+                }
+                None => {}
+            }
+            return true;
         }
         RETRO_ENVIRONMENT_SET_VARIABLES => {
             println!("RETRO_ENVIRONMENT_SET_VARIABLES");
