@@ -1,4 +1,4 @@
 mod binding_libretro;
 pub mod core;
-mod environment;
+pub mod environment;
 mod game_tools;

@@ -1,9 +1,4 @@
-use std::rc::Rc;
-
-use super::{
-    binding_libretro::{retro_game_info, LibretroRaw},
-    environment, game_tools,
-};
+use super::{binding_libretro::LibretroRaw, environment, game_tools};
 
 pub struct CoreCallbacks {
     pub video_refresh_callback:
@@ -33,58 +28,60 @@ pub struct Video {
 pub struct CoreWrapper {
     pub video: Video,
     pub support_no_game: bool,
-}
-
-impl CoreWrapper {
-    pub fn run(&self) {
-        unsafe {
-            match &RAW {
-                Some(raw) => raw.retro_run(),
-                None => {}
-            }
-        }
-    }
-
-    pub fn de_init(&self) {
-        unsafe {
-            match &RAW {
-                Some(raw) => raw.retro_deinit(),
-                None => {}
-            }
-        }
-    }
-
-    pub fn version(&self) -> u32 {
-        unsafe {
-            match &RAW {
-                Some(raw) => raw.retro_api_version(),
-                None => 0,
-            }
-        }
-    }
-
-    pub fn init(&self) {
-        unsafe {
-            match &RAW {
-                Some(raw) => raw.retro_init(),
-                None => {}
-            }
-        }
-    }
-
-    pub fn load_game(&self, path: String) {
-        unsafe {
-            match &RAW {
-                Some(raw) => game_tools::load(raw, &path),
-                None => {}
-            }
-        }
-    }
+    pub use_subsystem: bool,
 }
 
 static mut RAW: Option<LibretroRaw> = None;
 
-pub fn load(path: &String, callbacks: CoreCallbacks) -> Result<Rc<CoreWrapper>, String> {
+pub fn run() {
+    unsafe {
+        match &RAW {
+            Some(raw) => raw.retro_run(),
+            None => {}
+        }
+    }
+}
+
+pub fn de_init() {
+    unsafe {
+        match &RAW {
+            Some(raw) => raw.retro_deinit(),
+            None => {}
+        }
+    }
+}
+
+pub fn version() -> u32 {
+    unsafe {
+        match &RAW {
+            Some(raw) => raw.retro_api_version(),
+            None => 0,
+        }
+    }
+}
+
+pub fn init() {
+    unsafe {
+        match &RAW {
+            Some(raw) => raw.retro_init(),
+            None => {}
+        }
+    }
+}
+
+pub fn load_game(path: String) {
+    unsafe {
+        match &RAW {
+            Some(raw) => game_tools::load(raw, &path),
+            None => {}
+        }
+    }
+}
+
+pub fn load(
+    path: &String,
+    callbacks: CoreCallbacks,
+) -> Result<&'static environment::Context, String> {
     unsafe {
         let result = LibretroRaw::new(path);
 
@@ -92,6 +89,7 @@ pub fn load(path: &String, callbacks: CoreCallbacks) -> Result<Rc<CoreWrapper>, 
             Ok(libretro_raw) => {
                 let core_wrapper = CoreWrapper {
                     support_no_game: false,
+                    use_subsystem: false,
                     video: Video {
                         can_dupe: false,
                         frame_delta: Some(0),

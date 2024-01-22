@@ -1,8 +1,6 @@
-use std::rc::Rc;
+use libretro::core::CoreCallbacks;
 
-use libretro::core::{CoreCallbacks, CoreWrapper};
-
-extern crate sdl2;
+// extern crate sdl2;
 mod args_manager;
 mod libretro;
 
@@ -38,7 +36,7 @@ fn main() {
         video_refresh_callback: video_refresh_callback,
     };
 
-    let mut core_wrapper: Option<Rc<CoreWrapper>> = None;
+    let mut _core_ctx: Option<&'static libretro::environment::Context> = None;
 
     if values.contains_key("core") {
         let value = values.get("core");
@@ -49,20 +47,13 @@ fn main() {
 
                 match result {
                     Ok(core) => {
-                        core_wrapper = Some(core);
+                        _core_ctx = Some(core);
 
-                        // core_wrapper.as_mut().expect("erro ao trocar o valor").support_no_game = truel;
-                        let v = core_wrapper
-                            .as_ref()
-                            .expect("erro ao reconhecer a versão do núcleo")
-                            .version();
+                        let v = libretro::core::version();
 
                         println!("core version -> {:?}", v);
 
-                        core_wrapper
-                            .as_ref()
-                            .expect("erro ao iniciar o núcleo")
-                            .init();
+                        libretro::core::init();
                     }
                     Err(e) => println!("{e}"),
                 }
@@ -71,22 +62,26 @@ fn main() {
         }
     }
 
+    match _core_ctx {
+        Some(ctx) => {
+            println!(
+                "core is using a subsystem -> {:?}",
+                ctx.core.borrow().use_subsystem
+            );
+        }
+        None => {}
+    }
+
     if values.contains_key("rom") {
         let value = values.get("core");
 
         match value {
             Some(_path) => {
-                core_wrapper
-                    .as_ref()
-                    .expect("erro ao carrega a rom")
-                    .load_game(_path.to_owned());
+                libretro::core::load_game(_path.to_owned());
             }
             _ => {}
         }
     }
 
-    core_wrapper
-        .as_ref()
-        .expect("erro ao para o núcleo")
-        .de_init();
+    libretro::core::de_init();
 }

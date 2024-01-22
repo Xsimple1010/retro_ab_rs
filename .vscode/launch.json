@@ -20,7 +20,7 @@
                 }
             },
             "args": [
-                "--core=cores/bsnes_libretro.so",
+                "--core=cores/snes9x_libretro.dll",
                 "--rom=roms/teste.sfc"
             ],
             "cwd": "${workspaceFolder}"

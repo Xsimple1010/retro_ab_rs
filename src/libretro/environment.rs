@@ -3,51 +3,49 @@ use super::{
     core::{CoreCallbacks, CoreWrapper},
 };
 use ::std::os::raw;
-use std::rc::Rc;
+use std::{cell::RefCell, rc::Rc};
 
-struct _Environment {
-    core: Rc<CoreWrapper>,
-    callbacks: Rc<CoreCallbacks>,
+pub struct Context {
+    pub core: RefCell<CoreWrapper>,
+    callbacks: RefCell<CoreCallbacks>,
 }
 
-static mut ENVIRONMENT: Option<_Environment> = None;
+static mut CONTEXT: Option<Context> = None;
 
 pub fn configure(
     core_wrapper: CoreWrapper,
     callback: CoreCallbacks,
-) -> Result<Rc<CoreWrapper>, String> {
+) -> Result<&'static Context, String> {
     unsafe {
-        let core = Rc::new(core_wrapper);
-
-        ENVIRONMENT = Some(_Environment {
-            core: core.clone(),
-            callbacks: Rc::new(callback),
+        CONTEXT = Some(Context {
+            core: RefCell::new(core_wrapper),
+            callbacks: RefCell::new(callback),
         });
 
-        match &ENVIRONMENT {
-            Some(_) => Ok(core),
+        match &CONTEXT {
+            Some(ctx) => Ok(ctx),
             None => Err(String::from("value")),
         }
     }
 }
 
 pub unsafe extern "C" fn audio_sample_callback(left: i16, right: i16) {
-    match &ENVIRONMENT {
-        Some(env) => (env.callbacks.audio_sample_callback)(left, right),
+    match &CONTEXT {
+        Some(ctx) => (ctx.callbacks.borrow().audio_sample_callback)(left, right),
         None => {}
     }
 }
 
 pub unsafe extern "C" fn audio_sample_batch_callback(_data: *const i16, frames: usize) -> usize {
-    match &ENVIRONMENT {
-        Some(env) => (env.callbacks.audio_sample_batch_callback)(_data, frames),
+    match &CONTEXT {
+        Some(ctx) => (ctx.callbacks.borrow().audio_sample_batch_callback)(_data, frames),
         None => frames,
     }
 }
 
 pub unsafe extern "C" fn input_poll_callback() {
-    match &ENVIRONMENT {
-        Some(env) => (env.callbacks.input_poll_callback)(),
+    match &CONTEXT {
+        Some(ctx) => (ctx.callbacks.borrow().input_poll_callback)(),
         None => {}
     }
 }
@@ -58,8 +56,8 @@ pub unsafe extern "C" fn input_state_callback(
     _index: raw::c_uint,
     _id: raw::c_uint,
 ) -> i16 {
-    match &ENVIRONMENT {
-        Some(env) => (env.callbacks.input_state_callback)(
+    match &CONTEXT {
+        Some(ctx) => (ctx.callbacks.borrow().input_state_callback)(
             _port as i16,
             _device as i16,
             _index as i16,
@@ -81,15 +79,6 @@ pub unsafe extern "C" fn core_environment(
     cmd: ::std::os::raw::c_uint,
     _data: *mut raw::c_void,
 ) -> bool {
-    match &ENVIRONMENT {
-        Some(env) => {
-            println!("version is -> {:?}", env.core.version());
-        }
-        None => {
-            println!("none version");
-        }
-    }
-
     match cmd {
         RETRO_ENVIRONMENT_SET_SUPPORT_NO_GAME => {
             println!("RETRO_ENVIRONMENT_SET_SUPPORT_NO_GAME");
@@ -115,6 +104,13 @@ pub unsafe extern "C" fn core_environment(
         }
         RETRO_ENVIRONMENT_SET_SUBSYSTEM_INFO => {
             println!("RETRO_ENVIRONMENT_SET_SUBSYSTEM_INFO");
+
+            match &CONTEXT {
+                Some(ctx) => {
+                    ctx.core.borrow_mut().use_subsystem = true;
+                }
+                None => {}
+            }
         }
         RETRO_ENVIRONMENT_SET_CONTROLLER_INFO => {
             println!("RETRO_ENVIRONMENT_SET_CONTROLLER_INFO");
