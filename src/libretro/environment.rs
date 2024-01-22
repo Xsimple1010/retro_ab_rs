@@ -3,7 +3,7 @@ use super::{
     core::{CoreCallbacks, CoreWrapper},
 };
 use ::std::os::raw;
-use std::{cell::RefCell, rc::Rc};
+use std::cell::RefCell;
 
 pub struct Context {
     pub core: RefCell<CoreWrapper>,
@@ -84,8 +84,15 @@ pub unsafe extern "C" fn core_environment(
             println!("RETRO_ENVIRONMENT_SET_SUPPORT_NO_GAME");
         }
         RETRO_ENVIRONMENT_GET_CORE_OPTIONS_VERSION => {
-            // data = 2;
             println!("RETRO_ENVIRONMENT_GET_CORE_OPTIONS_VERSION");
+            *(_data as *mut usize) = 2;
+            return true;
+        }
+        RETRO_ENVIRONMENT_SET_CORE_OPTIONS_V2_INTL => {
+            println!("RETRO_ENVIRONMENT_SET_CORE_OPTIONS_V2_INTL");
+        }
+        RETRO_ENVIRONMENT_GET_LANGUAGE => {
+            println!("RETRO_ENVIRONMENT_GET_LANGUAGE");
         }
         RETRO_ENVIRONMENT_SET_GEOMETRY => {
             println!("RETRO_ENVIRONMENT_SET_GEOMETRY");
