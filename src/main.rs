@@ -1,4 +1,5 @@
 use libretro::core::CoreCallbacks;
+use std::env;
 
 // extern crate sdl2;
 mod args_manager;
@@ -27,7 +28,7 @@ fn video_refresh_callback(
 }
 
 fn main() {
-    let values = args_manager::get_values();
+    let values = args_manager::get_values(env::args().collect());
     let callbacks: CoreCallbacks = CoreCallbacks {
         audio_sample_callback: audio_sample_callback,
         audio_sample_batch_callback: audio_sample_batch_callback,
@@ -38,35 +39,27 @@ fn main() {
 
     let mut _core_ctx: Option<&'static libretro::environment::Context> = None;
 
-    if values.contains_key("core") {
-        let value = values.get("core");
+    match values.get("core") {
+        Some(path) => {
+            let result = libretro::core::load(path, callbacks);
 
-        match value {
-            Some(path) => {
-                let result = libretro::core::load(path, callbacks);
+            match result {
+                Ok(core) => {
+                    _core_ctx = Some(core);
 
-                match result {
-                    Ok(core) => {
-                        _core_ctx = Some(core);
-
-                        // libretro::core::init();
-                    }
-                    Err(e) => println!("{e}"),
+                    // libretro::core::init();
                 }
+                Err(e) => println!("{e}"),
             }
-            _ => {}
         }
+        _ => {}
     }
 
-    if values.contains_key("rom") {
-        let value = values.get("core");
-
-        match value {
-            Some(_path) => {
-                libretro::core::load_game(_path.to_owned());
-            }
-            _ => {}
+    match values.get("rom") {
+        Some(_path) => {
+            libretro::core::load_game(_path.to_owned());
         }
+        _ => {}
     }
 
     match _core_ctx {
