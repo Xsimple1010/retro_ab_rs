@@ -108,7 +108,7 @@ pub fn load(
 
                 //configure all needed callbacks
                 RAW = Some(libretro_raw);
-                let core_wrapper = environment::configure(core_wrapper, callbacks);
+                let context = environment::configure(core_wrapper, callbacks);
 
                 match &RAW {
                     Some(raw) => {
@@ -124,8 +124,8 @@ pub fn load(
                     None => {}
                 }
 
-                match core_wrapper {
-                    Ok(core) => Ok(core),
+                match context {
+                    Ok(ctx) => Ok(ctx),
                     Err(e) => Err(e),
                 }
             }
