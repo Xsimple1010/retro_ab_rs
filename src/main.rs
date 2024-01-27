@@ -30,11 +30,11 @@ fn video_refresh_callback(
 fn main() {
     let values = args_manager::get_values(env::args().collect());
     let callbacks: CoreCallbacks = CoreCallbacks {
-        audio_sample_callback: audio_sample_callback,
-        audio_sample_batch_callback: audio_sample_batch_callback,
-        input_poll_callback: input_poll_callback,
-        input_state_callback: input_state_callback,
-        video_refresh_callback: video_refresh_callback,
+        audio_sample_callback,
+        audio_sample_batch_callback,
+        input_poll_callback,
+        input_state_callback,
+        video_refresh_callback,
     };
 
     let mut _core_ctx: Option<&'static libretro::environment::Context> = None;

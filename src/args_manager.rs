@@ -1,12 +1,12 @@
 use std::collections::HashMap;
 
-fn get_key_and_value<'a>(arg: &'a str) -> (String, String) {
+fn get_key_and_value(arg: &str) -> (String, String) {
     let (mut key, mut value) = (String::from(""), String::from(""));
 
     if arg.starts_with("--") {
         let key_and_value = arg.replace("--", "");
 
-        let k_v: Vec<&str> = key_and_value.rsplit("=").collect();
+        let k_v: Vec<&str> = key_and_value.rsplit('=').collect();
 
         key = k_v[1].to_string();
 
@@ -20,7 +20,7 @@ pub fn get_values(args: Vec<String>) -> HashMap<String, String> {
     let mut values: HashMap<String, String> = HashMap::new();
 
     for arg in args {
-        if arg.contains(&"--core=") {
+        if arg.contains("--core=") {
             let (key, value) = get_key_and_value(&arg);
 
             if !key.is_empty() {
@@ -28,7 +28,7 @@ pub fn get_values(args: Vec<String>) -> HashMap<String, String> {
             }
         }
 
-        if arg.contains(&"--rom=") {
+        if arg.contains("--rom=") {
             let (key, value) = get_key_and_value(&arg);
 
             if !key.is_empty() {
