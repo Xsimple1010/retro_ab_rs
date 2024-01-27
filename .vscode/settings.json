@@ -5,5 +5,8 @@
         "fullpath",
         "libloading",
         "libretro"
+    ],
+    "rust-analyzer.linkedProjects": [
+        ".\\Cargo.toml"
     ]
 }
