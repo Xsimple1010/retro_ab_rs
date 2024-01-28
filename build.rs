@@ -1,7 +1,30 @@
-use std::{fs::OpenOptions, io::Read, os::windows::fs::FileExt, path::PathBuf};
+use std::{
+    env,
+    fs::{File, OpenOptions},
+    io::{Read, Write},
+    path::PathBuf,
+};
+
+fn configure_files(temp_path: PathBuf, out_path: PathBuf) {
+    let mut temp_file = OpenOptions::new().read(true).open(temp_path).unwrap();
+
+    let mut temp_contents = String::new();
+    temp_file.read_to_string(&mut temp_contents).unwrap();
+
+    let mut bindings_file = File::create(out_path).unwrap();
+
+    bindings_file
+        .write_all(
+            b"#![allow(dead_code,non_snake_case,non_camel_case_types,non_upper_case_globals)]\n\n",
+        )
+        .unwrap();
+
+    bindings_file.write_all(temp_contents.as_bytes()).unwrap();
+}
 
 fn main() {
     let out_path = PathBuf::from("./src/").join("binding_libretro.rs");
+    let temp_path = PathBuf::from(env::var("OUT_DIR").unwrap()).join("temp_binding_libretro.rs");
 
     let _ = bindgen::Builder::default()
         .header("src/libretro/libretro.h")
@@ -22,20 +45,7 @@ fn main() {
         .bitfield_enum("retro_mod")
         .generate()
         .expect("Unable to generate libretro.h bindings")
-        .write_to_file(out_path.clone());
+        .write_to_file(temp_path.clone());
 
-    let mut file = OpenOptions::new()
-        .read(true)
-        .write(true)
-        .open("src/binding_libretro.rs")
-        .unwrap();
-
-    let mut contents = String::new();
-    file.read_to_string(&mut contents).unwrap();
-
-    contents = "#![allow(dead_code,non_snake_case,non_camel_case_types,non_upper_case_globals)]\n"
-        .to_owned()
-        + &contents;
-
-    file.seek_write(contents.as_bytes(), 0).unwrap();
+    configure_files(temp_path, out_path);
 }

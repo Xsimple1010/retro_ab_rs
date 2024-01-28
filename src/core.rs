@@ -1,7 +1,9 @@
-use super::{
+use crate::{
     binding_libretro::{retro_language, retro_pixel_format, LibretroRaw},
-    environment, game_tools,
+    game_tools,
 };
+
+use super::environment;
 
 pub struct CoreCallbacks {
     pub video_refresh_callback:

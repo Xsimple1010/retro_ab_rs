@@ -1,4 +1,4 @@
-use crate::libretro::binding_libretro::{retro_game_info, retro_system_info};
+use crate::binding_libretro::{retro_game_info, retro_system_info};
 
 use super::binding_libretro::LibretroRaw;
 
