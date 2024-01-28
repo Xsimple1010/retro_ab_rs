@@ -1,17 +1,9 @@
 [package]
-name = "retro_ab"
+name = "retro_ab_example"
 version = "0.1.0"
 edition = "2021"
 
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
 [dependencies]
-libloading = "0.8.1"
-
-[build-dependencies]
-bindgen = "0.69.2"
-
-
-[[example]]
-name = "retro_ab_example"
-path = "exemple/src/main.rs"
+retro_ab = { path = "../" }

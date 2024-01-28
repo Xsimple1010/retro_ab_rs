@@ -7,16 +7,15 @@
         {
             "type": "lldb",
             "request": "launch",
-            "name": "Debug executable 'retro_ab'",
+            "name": "Debug executable 'retro_ab_example'",
             "cargo": {
                 "args": [
                     "build",
-                    "--bin=retro_ab",
-                    "--package=retro_ab"
+                    "--example=retro_ab_example",
                 ],
                 "filter": {
-                    "name": "retro_ab",
-                    "kind": "bin"
+                    "name": "retro_ab_example",
+                    "kind": "example"
                 }
             },
             "args": [
