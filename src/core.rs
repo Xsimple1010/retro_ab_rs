@@ -39,6 +39,29 @@ pub struct CoreWrapper {
     pub language: retro_language,
 }
 
+impl CoreWrapper {
+    pub fn new() -> CoreWrapper {
+        let core = CoreWrapper {
+            initialized: false,
+            support_no_game: false,
+            use_subsystem: false,
+            language: retro_language::RETRO_LANGUAGE_PORTUGUESE_BRAZIL,
+            supports_bitmasks: false,
+            video: Video {
+                can_dupe: false,
+                frame_delta: Some(0),
+                had_frame: false,
+                last_height: 0,
+                last_width: 0,
+                last_pitch: 0,
+                pixel_format: retro_pixel_format::RETRO_PIXEL_FORMAT_UNKNOWN,
+            },
+        };
+
+        core
+    }
+}
+
 pub struct Context {
     pub core: RefCell<CoreWrapper>,
     pub callbacks: RefCell<CoreCallbacks>,
@@ -112,22 +135,7 @@ pub fn load(path: &String, callbacks: CoreCallbacks) -> Result<&'static Context,
 
         match result {
             Ok(libretro_raw) => {
-                let core_wrapper = CoreWrapper {
-                    initialized: false,
-                    support_no_game: false,
-                    use_subsystem: false,
-                    language: retro_language::RETRO_LANGUAGE_PORTUGUESE_BRAZIL,
-                    supports_bitmasks: false,
-                    video: Video {
-                        can_dupe: false,
-                        frame_delta: Some(0),
-                        had_frame: false,
-                        last_height: 0,
-                        last_width: 0,
-                        last_pitch: 0,
-                        pixel_format: retro_pixel_format::RETRO_PIXEL_FORMAT_UNKNOWN,
-                    },
-                };
+                let core_wrapper = CoreWrapper::new();
 
                 //configure all needed callbacks
                 RAW = Some(libretro_raw);
