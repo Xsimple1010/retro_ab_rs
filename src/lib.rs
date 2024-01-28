@@ -1,28 +1,9 @@
 pub mod args_manager;
 pub mod core;
-pub mod environment;
 
 mod binding_libretro;
+mod environment;
 mod game_tools;
-
-pub fn load_core(
-    path: &String,
-    callbacks: core::CoreCallbacks,
-) -> Result<&'static core::Context, String> {
-    let context = core::load(path, callbacks);
-
-    match context {
-        Ok(ctx) => Ok(ctx),
-        _ => Err("error".to_string()),
-    }
-}
-pub fn init() {
-    core::init();
-}
-
-pub fn deinit() {
-    core::de_init();
-}
 
 #[cfg(test)]
 mod lib_fns {
@@ -53,7 +34,7 @@ mod lib_fns {
     static mut CONTEXT: Option<&'static core::Context> = None;
 
     #[test]
-    fn test_load_core() {
+    fn load_core() {
         let callbacks = core::CoreCallbacks {
             audio_sample_batch_callback,
             audio_sample_callback,
@@ -64,7 +45,7 @@ mod lib_fns {
 
         let path = "cores/test.dll".to_string();
 
-        let res = load_core(&path, callbacks);
+        let res = core::load(&path, callbacks);
 
         match res {
             Ok(ctx) => unsafe {
@@ -75,11 +56,11 @@ mod lib_fns {
     }
 
     #[test]
-    fn test_init() {
+    fn init() {
         //isso vai inicializar o contexto para realizar o teste atual
-        test_load_core();
+        load_core();
         //essa é a função que sará testada agora
-        init();
+        core::init();
 
         unsafe {
             match CONTEXT {
@@ -96,11 +77,11 @@ mod lib_fns {
     }
 
     #[test]
-    fn test_deinit() {
+    fn deinit() {
         //isso vai inicializar o contexto para realizar o teste atual
-        test_load_core();
+        load_core();
         //essa é a função que sará testada agora
-        deinit();
+        core::de_init();
 
         unsafe {
             match CONTEXT {

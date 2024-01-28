@@ -19,7 +19,7 @@
                 }
             },
             "args": [
-                "--core=cores/snes9x_libretro.dll",
+                "--core=cores/test.dll",
                 "--rom=roms/teste.sfc"
             ],
             "cwd": "${workspaceFolder}"
