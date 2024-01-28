@@ -8,7 +8,7 @@ mod game_tools;
 pub fn load_core(
     path: &String,
     callbacks: core::CoreCallbacks,
-) -> Result<&'static environment::Context, String> {
+) -> Result<&'static core::Context, String> {
     let context = core::load(path, callbacks);
 
     match context {
@@ -26,8 +26,7 @@ pub fn deinit() {
 
 #[cfg(test)]
 mod lib_fns {
-    use crate::core;
-    use crate::load_core;
+    use crate::*;
 
     fn audio_sample_callback(_left: i16, _right: i16) {}
 
@@ -51,8 +50,10 @@ mod lib_fns {
     ) {
     }
 
+    static mut CONTEXT: Option<&'static core::Context> = None;
+
     #[test]
-    fn load() {
+    fn test_load_core() {
         let callbacks = core::CoreCallbacks {
             audio_sample_batch_callback,
             audio_sample_callback,
@@ -66,8 +67,52 @@ mod lib_fns {
         let res = load_core(&path, callbacks);
 
         match res {
-            Ok(_) => assert_eq!(1, 1),
+            Ok(ctx) => unsafe {
+                CONTEXT = Some(ctx);
+            },
             Err(e) => panic!("{:?}", e),
+        }
+    }
+
+    #[test]
+    fn test_init() {
+        //isso vai inicializar o contexto para realizar o teste atual
+        test_load_core();
+        //essa é a função que sará testada agora
+        init();
+
+        unsafe {
+            match CONTEXT {
+                Some(ctx) => {
+                    assert_eq!(
+                        ctx.core.borrow().initialized,
+                        true,
+                        "o CORE nao foi inicializado"
+                    );
+                }
+                _ => panic!("O contexto nao foi encontrado"),
+            }
+        }
+    }
+
+    #[test]
+    fn test_deinit() {
+        //isso vai inicializar o contexto para realizar o teste atual
+        test_load_core();
+        //essa é a função que sará testada agora
+        deinit();
+
+        unsafe {
+            match CONTEXT {
+                Some(ctx) => {
+                    assert_eq!(
+                        ctx.core.borrow().initialized,
+                        false,
+                        "o CORE nao foi inicializado"
+                    );
+                }
+                _ => panic!("O contexto nao foi encontrado"),
+            }
         }
     }
 }

@@ -1,3 +1,5 @@
+use std::cell::RefCell;
+
 use crate::{
     binding_libretro::{retro_language, retro_pixel_format, LibretroRaw},
     game_tools,
@@ -29,6 +31,7 @@ pub struct Video {
 }
 
 pub struct CoreWrapper {
+    pub initialized: bool,
     pub video: Video,
     pub supports_bitmasks: bool,
     pub support_no_game: bool,
@@ -36,7 +39,13 @@ pub struct CoreWrapper {
     pub language: retro_language,
 }
 
+pub struct Context {
+    pub core: RefCell<CoreWrapper>,
+    pub callbacks: RefCell<CoreCallbacks>,
+}
+
 static mut RAW: Option<LibretroRaw> = None;
+static mut CONTEXT: Option<&'static Context> = None;
 
 pub fn run() {
     unsafe {
@@ -50,7 +59,15 @@ pub fn run() {
 pub fn de_init() {
     unsafe {
         match &RAW {
-            Some(raw) => raw.retro_deinit(),
+            Some(raw) => match CONTEXT {
+                Some(ctx) => {
+                    raw.retro_deinit();
+                    ctx.core.borrow_mut().initialized = false;
+                }
+                //todo: se acontecer qualquer tipo de erro o CORE deve ser descarregado
+                //ops: isso vale para todos os erros nesse projeto!
+                _ => {}
+            },
             None => {}
         }
     }
@@ -68,7 +85,13 @@ pub fn version() -> u32 {
 pub fn init() {
     unsafe {
         match &RAW {
-            Some(raw) => raw.retro_init(),
+            Some(raw) => match CONTEXT {
+                Some(ctx) => {
+                    raw.retro_init();
+                    ctx.core.borrow_mut().initialized = true;
+                }
+                _ => {}
+            },
             None => {}
         }
     }
@@ -83,16 +106,14 @@ pub fn load_game(path: String) {
     }
 }
 
-pub fn load(
-    path: &String,
-    callbacks: CoreCallbacks,
-) -> Result<&'static environment::Context, String> {
+pub fn load(path: &String, callbacks: CoreCallbacks) -> Result<&'static Context, String> {
     unsafe {
         let result = LibretroRaw::new(path);
 
         match result {
             Ok(libretro_raw) => {
                 let core_wrapper = CoreWrapper {
+                    initialized: false,
                     support_no_game: false,
                     use_subsystem: false,
                     language: retro_language::RETRO_LANGUAGE_PORTUGUESE_BRAZIL,
@@ -127,7 +148,11 @@ pub fn load(
                 }
 
                 match context {
-                    Ok(ctx) => Ok(ctx),
+                    Ok(ctx) => {
+                        CONTEXT = Some(ctx);
+
+                        Ok(ctx)
+                    }
                     Err(e) => Err(e),
                 }
             }

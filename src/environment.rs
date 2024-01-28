@@ -1,4 +1,4 @@
-use super::core::{CoreCallbacks, CoreWrapper};
+use super::core::{Context, CoreCallbacks, CoreWrapper};
 use crate::binding_libretro::{
     retro_language, retro_pixel_format, RETRO_ENVIRONMENT_GET_CORE_OPTIONS_VERSION,
     RETRO_ENVIRONMENT_GET_LANGUAGE, RETRO_ENVIRONMENT_GET_LOG_INTERFACE,
@@ -11,11 +11,6 @@ use crate::binding_libretro::{
 };
 use ::std::os::raw;
 use std::cell::RefCell;
-
-pub struct Context {
-    pub core: RefCell<CoreWrapper>,
-    callbacks: RefCell<CoreCallbacks>,
-}
 
 static mut CONTEXT: Option<Context> = None;
 
