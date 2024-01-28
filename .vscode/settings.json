@@ -1,12 +1,40 @@
 {
     "cSpell.words": [
+        "ASTURIAN",
+        "bindgen",
+        "bitfield",
+        "bitmask",
         "bitmasks",
+        "bitor",
+        "closedir",
         "deinit",
+        "dirstream",
+        "fparse",
         "fullpath",
+        "iface",
+        "JOYPAD",
         "libloading",
-        "libretro"
+        "libretro",
+        "newtype",
+        "opendir",
+        "POWERSTATE",
+        "readdir",
+        "repr",
+        "RETROK",
+        "Retruns",
+        "rsplit",
+        "sucess",
+        "Uninit",
+        "UNINIT",
+        "VSYNC"
     ],
     "rust-analyzer.linkedProjects": [
-        ".\\Cargo.toml"
+        ".\\Cargo.toml",
+        ".\\Cargo.toml",
+        ".\\Cargo.toml",
+        ".\\Cargo.toml",
+        ".\\Cargo.toml",
+        ".\\Cargo.toml",
+        ".\\exemple\\Cargo.toml"
     ]
 }

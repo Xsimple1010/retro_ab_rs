@@ -1,7 +1,7 @@
-use std::path::PathBuf;
+use std::{fs::OpenOptions, io::Read, os::windows::fs::FileExt, path::PathBuf};
 
 fn main() {
-    let out_path = PathBuf::from("./src/libretro/");
+    let out_path = PathBuf::from("./src/").join("binding_libretro.rs");
 
     let _ = bindgen::Builder::default()
         .header("src/libretro/libretro.h")
@@ -22,5 +22,20 @@ fn main() {
         .bitfield_enum("retro_mod")
         .generate()
         .expect("Unable to generate libretro.h bindings")
-        .write_to_file(out_path.join("binding_libretro.rs"));
+        .write_to_file(out_path.clone());
+
+    let mut file = OpenOptions::new()
+        .read(true)
+        .write(true)
+        .open("src/binding_libretro.rs")
+        .unwrap();
+
+    let mut contents = String::new();
+    file.read_to_string(&mut contents).unwrap();
+
+    contents = "#![allow(dead_code,non_snake_case,non_camel_case_types,non_upper_case_globals)]\n"
+        .to_owned()
+        + &contents;
+
+    file.seek_write(contents.as_bytes(), 0).unwrap();
 }
