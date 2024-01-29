@@ -55,6 +55,18 @@ fn main() {
             println!("subsystem -> {:?}", ctx.core.borrow().use_subsystem);
             println!("pixel format -> {:?}", ctx.core.borrow().video.pixel_format);
             println!("language -> {:?}", ctx.core.borrow().language);
+
+            println!("options version -> {:?}", ctx.options.borrow().version);
+            // println!("options here\n");
+            // for opt in &ctx.options.borrow().opts {
+            //     println!("{:?}", opt.key);
+            //     println!("{:?}", opt.desc);
+            //     println!("{:?}", opt.desc_categorized);
+            //     println!("{:?}", opt.info);
+            //     println!("{:?}", opt.info_categorized);
+            //     println!("{:?}", opt.default_value);
+            //     println!("");
+            // }
         }
         None => {}
     }

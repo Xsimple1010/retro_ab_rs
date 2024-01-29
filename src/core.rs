@@ -2,7 +2,7 @@ use std::cell::RefCell;
 
 use crate::{
     binding_libretro::{retro_language, retro_pixel_format, LibretroRaw},
-    game_tools,
+    game_tools, option_manager,
 };
 
 use super::environment;
@@ -39,6 +39,12 @@ pub struct CoreWrapper {
     pub language: retro_language,
 }
 
+impl Default for CoreWrapper {
+    fn default() -> Self {
+        Self::new()
+    }
+}
+
 impl CoreWrapper {
     pub fn new() -> CoreWrapper {
         CoreWrapper {
@@ -63,6 +69,7 @@ impl CoreWrapper {
 pub struct Context {
     pub core: RefCell<CoreWrapper>,
     pub callbacks: RefCell<CoreCallbacks>,
+    pub options: RefCell<option_manager::OptionManager>,
 }
 
 static mut RAW: Option<LibretroRaw> = None;

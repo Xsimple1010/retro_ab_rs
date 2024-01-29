@@ -23,6 +23,7 @@ pub fn configure(
         CONTEXT = Some(Context {
             core: RefCell::new(core_wrapper),
             callbacks: RefCell::new(callback),
+            options: RefCell::new(option_manager::OptionManager::new()),
         });
 
         match &CONTEXT {
@@ -103,9 +104,18 @@ pub unsafe extern "C" fn core_environment(
         RETRO_ENVIRONMENT_SET_CORE_OPTIONS_V2_INTL => {
             println!("RETRO_ENVIRONMENT_SET_CORE_OPTIONS_V2_INTL");
 
-            let options_v2 = *(_data as *mut retro_core_options_v2_intl);
+            match &CONTEXT {
+                Some(ctx) => {
+                    let options_v2 = *(_data as *mut retro_core_options_v2_intl);
+                    let _option_m = option_manager::convert_option_v2_intl(options_v2);
 
-            let _option_m = option_manager::convert_option_v2_intl(options_v2);
+                    ctx.options.borrow_mut().version = _option_m.version;
+                    ctx.options.borrow_mut().file_path = _option_m.file_path;
+                    ctx.options.borrow_mut().opts = _option_m.opts;
+                    ctx.options.borrow_mut().origin_ptr = _data;
+                }
+                _ => return false,
+            }
 
             return true;
         }

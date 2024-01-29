@@ -3,6 +3,7 @@ pub mod core;
 
 mod binding_libretro;
 mod environment;
+mod ffi_tools;
 mod game_tools;
 mod option_manager;
 

@@ -1,14 +1,22 @@
-use crate::binding_libretro::{
-    retro_core_option_v2_definition, retro_core_options_v2, retro_core_options_v2_intl,
+use crate::{
+    binding_libretro::{
+        retro_core_option_v2_definition, retro_core_options_v2, retro_core_options_v2_intl,
+    },
+    ffi_tools,
 };
-use std::{
-    ffi::{c_char, CStr},
-    path::PathBuf,
-};
-
+use std::{ffi::c_void, path::PathBuf};
 pub struct Values {
     pub value: String,
     pub label: String,
+}
+
+#[derive(Debug, Copy, Clone, Hash, PartialEq, Eq)]
+pub enum OptionVersion {
+    Legacy,
+    V1Intl,
+    V1,
+    V2Intl,
+    V2,
 }
 
 pub struct Options {
@@ -23,71 +31,105 @@ pub struct Options {
 }
 
 pub struct OptionManager {
+    pub version: OptionVersion,
     pub file_path: PathBuf,
     pub opts: Vec<Options>,
+    pub origin_ptr: *mut c_void,
 }
 
-fn get_str_from_ptr(ptr: *const ::std::os::raw::c_char) -> String {
-    if ptr.is_null() {
-        return "".to_string();
+impl Default for OptionManager {
+    fn default() -> Self {
+        Self::new()
+    }
+}
+
+impl OptionManager {
+    pub fn new() -> OptionManager {
+        let expect_value = "".to_owned();
+        let origin_ptr = &expect_value as *const String as *mut c_void;
+
+        OptionManager {
+            version: OptionVersion::V2,
+            file_path: PathBuf::from(""),
+            opts: Vec::new(),
+            origin_ptr,
+        }
     }
 
-    let c_char_ptr: *mut c_char = ptr as *mut c_char;
-    let c_str = unsafe { CStr::from_ptr(c_char_ptr) };
-    let str_slice = c_str.to_str().unwrap();
+    pub fn update(&self, key: &str, value: &str) {
+        match self.version {
+            OptionVersion::Legacy => {}
+            OptionVersion::V1Intl => {}
+            OptionVersion::V1 => {}
+            OptionVersion::V2Intl => self.update_value_v2_intl(key, value),
+            OptionVersion::V2 => {}
+        }
+    }
 
-    str::to_owned(str_slice)
+    fn update_value_v2_intl(&self, _key: &str, _value: &str) {
+        let _op = unsafe { *(self.origin_ptr as *mut retro_core_options_v2_intl) };
+    }
+}
+
+//===============================================
+//=================v2_intl=======================
+//===============================================
+fn get_v2_intl_definitions(
+    definitions: *mut retro_core_option_v2_definition,
+    options_manager: &mut OptionManager,
+) {
+    let definitions = unsafe { *(definitions as *mut [retro_core_option_v2_definition; 90]) };
+
+    for definition in definitions {
+        if !definition.key.is_null() {
+            let key = ffi_tools::get_str_from_ptr(definition.key);
+            let default_value = ffi_tools::get_str_from_ptr(definition.default_value);
+            let info = ffi_tools::get_str_from_ptr(definition.info);
+            let desc = ffi_tools::get_str_from_ptr(definition.desc);
+            let desc_categorized = ffi_tools::get_str_from_ptr(definition.desc_categorized);
+            let category_key = ffi_tools::get_str_from_ptr(definition.category_key);
+            let info_categorized = ffi_tools::get_str_from_ptr(definition.info_categorized);
+            let mut values: Vec<Values> = Vec::new();
+
+            for retro_value in definition.values {
+                if !retro_value.label.is_null() {
+                    let value = ffi_tools::get_str_from_ptr(retro_value.value);
+                    let label = ffi_tools::get_str_from_ptr(retro_value.label);
+
+                    values.push(Values { label, value });
+                }
+            }
+
+            options_manager.opts.push(Options {
+                key,
+                default_value,
+                info,
+                desc,
+                category_key,
+                desc_categorized,
+                info_categorized,
+                values,
+            })
+        } else {
+            break;
+        }
+    }
 }
 
 pub fn convert_option_v2_intl(option_intl_v2: retro_core_options_v2_intl) -> OptionManager {
-    let mut options_manager = OptionManager {
-        file_path: PathBuf::from(""),
-        opts: Vec::new(),
-    };
+    let mut options_manager = OptionManager::new();
+    options_manager.version = OptionVersion::V2Intl;
 
     unsafe {
-        let mut _current_options: Option<retro_core_options_v2> = None;
-
         if option_intl_v2.local.is_null() {
-            let op: retro_core_options_v2 = *(option_intl_v2.us);
-            let en = *(op.definitions as *mut [retro_core_option_v2_definition; 90]);
-
-            for e in en {
-                if !e.key.is_null() {
-                    let key = get_str_from_ptr(e.key);
-                    let default_value = get_str_from_ptr(e.default_value);
-                    let info = get_str_from_ptr(e.info);
-                    let desc = get_str_from_ptr(e.desc);
-                    let desc_categorized = get_str_from_ptr(e.desc_categorized);
-                    let category_key = get_str_from_ptr(e.category_key);
-                    let info_categorized = get_str_from_ptr(e.info_categorized);
-                    let mut values: Vec<Values> = Vec::new();
-
-                    for retro_value in e.values {
-                        if !retro_value.label.is_null() {
-                            let value = get_str_from_ptr(retro_value.value);
-                            let label = get_str_from_ptr(retro_value.label);
-
-                            values.push(Values { label, value });
-                        }
-                    }
-
-                    options_manager.opts.push(Options {
-                        key,
-                        default_value,
-                        info,
-                        desc,
-                        category_key,
-                        desc_categorized,
-                        info_categorized,
-                        values,
-                    })
-                } else {
-                    break;
-                }
-            }
+            let us: retro_core_options_v2 = *(option_intl_v2.us);
+            get_v2_intl_definitions(us.definitions, &mut options_manager);
+        } else {
+            let local: retro_core_options_v2 = *(option_intl_v2.local);
+            get_v2_intl_definitions(local.definitions, &mut options_manager);
         }
     }
 
     options_manager
 }
+//===============================================
