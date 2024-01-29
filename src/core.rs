@@ -41,7 +41,7 @@ pub struct CoreWrapper {
 
 impl CoreWrapper {
     pub fn new() -> CoreWrapper {
-        let core = CoreWrapper {
+        CoreWrapper {
             initialized: false,
             support_no_game: false,
             use_subsystem: false,
@@ -56,9 +56,7 @@ impl CoreWrapper {
                 last_pitch: 0,
                 pixel_format: retro_pixel_format::RETRO_PIXEL_FORMAT_UNKNOWN,
             },
-        };
-
-        core
+        }
     }
 }
 
@@ -82,15 +80,12 @@ pub fn run() {
 pub fn de_init() {
     unsafe {
         match &RAW {
-            Some(raw) => match CONTEXT {
-                Some(ctx) => {
+            Some(raw) => {
+                if let Some(ctx) = CONTEXT {
                     raw.retro_deinit();
                     ctx.core.borrow_mut().initialized = false;
                 }
-                //todo: se acontecer qualquer tipo de erro o CORE deve ser descarregado
-                //ops: isso vale para todos os erros nesse projeto!
-                _ => {}
-            },
+            }
             None => {}
         }
     }
@@ -108,13 +103,12 @@ pub fn version() -> u32 {
 pub fn init() {
     unsafe {
         match &RAW {
-            Some(raw) => match CONTEXT {
-                Some(ctx) => {
+            Some(raw) => {
+                if let Some(ctx) = CONTEXT {
                     raw.retro_init();
                     ctx.core.borrow_mut().initialized = true;
                 }
-                _ => {}
-            },
+            }
             None => {}
         }
     }

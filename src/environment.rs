@@ -1,8 +1,9 @@
 use super::core::{Context, CoreCallbacks, CoreWrapper};
+use super::option_manager;
 use crate::binding_libretro::{
-    retro_language, retro_pixel_format, RETRO_ENVIRONMENT_GET_CORE_OPTIONS_VERSION,
-    RETRO_ENVIRONMENT_GET_LANGUAGE, RETRO_ENVIRONMENT_GET_LOG_INTERFACE,
-    RETRO_ENVIRONMENT_SET_CONTROLLER_INFO,
+    retro_core_options_v2_intl, retro_language, retro_pixel_format,
+    RETRO_ENVIRONMENT_GET_CORE_OPTIONS_VERSION, RETRO_ENVIRONMENT_GET_LANGUAGE,
+    RETRO_ENVIRONMENT_GET_LOG_INTERFACE, RETRO_ENVIRONMENT_SET_CONTROLLER_INFO,
     RETRO_ENVIRONMENT_SET_CORE_OPTIONS_UPDATE_DISPLAY_CALLBACK,
     RETRO_ENVIRONMENT_SET_CORE_OPTIONS_V2_INTL, RETRO_ENVIRONMENT_SET_GEOMETRY,
     RETRO_ENVIRONMENT_SET_INPUT_DESCRIPTORS, RETRO_ENVIRONMENT_SET_PIXEL_FORMAT,
@@ -101,6 +102,12 @@ pub unsafe extern "C" fn core_environment(
         }
         RETRO_ENVIRONMENT_SET_CORE_OPTIONS_V2_INTL => {
             println!("RETRO_ENVIRONMENT_SET_CORE_OPTIONS_V2_INTL");
+
+            let options_v2 = *(_data as *mut retro_core_options_v2_intl);
+
+            let _option_m = option_manager::convert_option_v2_intl(options_v2);
+
+            return true;
         }
         RETRO_ENVIRONMENT_GET_LANGUAGE => {
             println!("RETRO_ENVIRONMENT_GET_LANGUAGE -> ok");
@@ -205,17 +212,7 @@ mod environment {
         //todo: testar o contexto
         unsafe {
             match &CONTEXT {
-                Some(_ctx) => {
-                    // let callbacks = CoreCallbacks {
-                    //     audio_sample_batch_callback,
-                    //     audio_sample_callback,
-                    //     input_poll_callback,
-                    //     input_state_callback,
-                    //     video_refresh_callback,
-                    // };
-
-                    // assert_eq!(ctx.core.borrow(), CoreWrapper::new())
-                }
+                Some(_ctx) => {}
                 _ => {}
             }
         }

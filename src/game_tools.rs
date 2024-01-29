@@ -2,7 +2,7 @@ use crate::binding_libretro::{retro_game_info, retro_system_info};
 
 use super::binding_libretro::LibretroRaw;
 
-pub fn load(raw: &LibretroRaw, path: &String) {
+pub fn load(raw: &LibretroRaw, path: &str) {
     let sys_av_info: *mut retro_system_info = &mut retro_system_info {
         block_extract: false,
         need_fullpath: false,

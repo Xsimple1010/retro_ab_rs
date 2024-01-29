@@ -4,6 +4,7 @@ pub mod core;
 mod binding_libretro;
 mod environment;
 mod game_tools;
+mod option_manager;
 
 #[cfg(test)]
 mod lib_fns {
