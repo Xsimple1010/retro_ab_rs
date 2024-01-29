@@ -10,13 +10,9 @@ use super::environment;
 pub struct CoreCallbacks {
     pub video_refresh_callback:
         fn(data: *const ::std::os::raw::c_void, width: i32, height: i32, pitch: usize),
-
     pub audio_sample_callback: fn(left: i16, right: i16),
-
     pub audio_sample_batch_callback: fn(data: *const i16, frames: usize) -> usize,
-
     pub input_poll_callback: fn(),
-
     pub input_state_callback: fn(port: i16, device: i16, index: i16, id: i16) -> i16,
 }
 

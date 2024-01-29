@@ -102,7 +102,7 @@ pub unsafe extern "C" fn core_environment(
             return true;
         }
         RETRO_ENVIRONMENT_SET_CORE_OPTIONS_V2_INTL => {
-            println!("RETRO_ENVIRONMENT_SET_CORE_OPTIONS_V2_INTL");
+            println!("RETRO_ENVIRONMENT_SET_CORE_OPTIONS_V2_INTL -> ok");
 
             match &CONTEXT {
                 Some(ctx) => {
@@ -113,6 +113,16 @@ pub unsafe extern "C" fn core_environment(
                     ctx.options.borrow_mut().file_path = _option_m.file_path;
                     ctx.options.borrow_mut().opts = _option_m.opts;
                     ctx.options.borrow_mut().origin_ptr = _data;
+
+                    //TODO:preciso fornecer um nome para o arquivo onde as configurações serão salvas,
+                    //em seguida atualiza as configurações fornecidas pelo CORE
+                    //de acordo com as que estão salvas no arquivo (se ele existe!).
+                    //acho que vou fazer assim:
+                    //
+                    // ctx.options.borrow_mut().file_path = ?
+                    // ctx.options.borrow_mut().update_variables_from_file();
+                    //
+                    //minha duvida é onde vou colocar a callback retornada por RETRO_ENVIRONMENT_SET_CORE_OPTIONS_DISPLAY
                 }
                 _ => return false,
             }
