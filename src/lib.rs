@@ -6,6 +6,7 @@ mod environment;
 mod ffi_tools;
 mod game_tools;
 mod option_manager;
+mod retro_context;
 
 #[cfg(test)]
 mod lib_fns {
@@ -33,7 +34,7 @@ mod lib_fns {
     ) {
     }
 
-    static mut CONTEXT: Option<&'static core::Context> = None;
+    static mut CONTEXT: Option<&'static core::RetroContext> = None;
 
     #[test]
     fn load_core() {

@@ -26,7 +26,7 @@ fn video_refresh_callback(
 fn main() {
     let value = retro_ab::args_manager::get_values(env::args().collect());
 
-    let mut context: Option<&'static core::Context> = None;
+    let mut context: Option<&'static core::RetroContext> = None;
 
     let callbacks = core::CoreCallbacks {
         audio_sample_batch_callback,
@@ -57,15 +57,21 @@ fn main() {
             println!("language -> {:?}", ctx.core.borrow().language);
 
             println!("options version -> {:?}", ctx.options.borrow().version);
+
+            println!("sys -> {:?}", ctx.core.borrow().sys_info.library_name);
+            println!("sys -> {:?}", ctx.core.borrow().sys_info.library_version);
+            println!("sys -> {:?}", ctx.core.borrow().sys_info.valid_extensions);
+            println!("sys -> {:?}", ctx.options.borrow_mut().file_path);
+            // println!("sys -> {:?}", ctx.core.borrow().version);
             // println!("options here\n");
             // for opt in &ctx.options.borrow().opts {
-            //     println!("{:?}", opt.key);
-            //     println!("{:?}", opt.desc);
-            //     println!("{:?}", opt.desc_categorized);
-            //     println!("{:?}", opt.info);
-            //     println!("{:?}", opt.info_categorized);
-            //     println!("{:?}", opt.default_value);
-            //     println!("");
+            // println!("{:?}", opt.key);
+            // println!("{:?}", opt.visibility);
+            // println!("{:?}", opt.desc_categorized);
+            // println!("{:?}", opt.info);
+            // println!("{:?}", opt.info_categorized);
+            // println!("{:?}", opt.default_value);
+            // println!("");
             // }
         }
         None => {}

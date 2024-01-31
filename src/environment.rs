@@ -1,56 +1,45 @@
-use super::core::{Context, CoreCallbacks, CoreWrapper};
-use super::option_manager;
-use crate::binding_libretro::{
-    retro_core_options_v2_intl, retro_language, retro_pixel_format,
-    RETRO_ENVIRONMENT_GET_CORE_OPTIONS_VERSION, RETRO_ENVIRONMENT_GET_LANGUAGE,
-    RETRO_ENVIRONMENT_GET_LOG_INTERFACE, RETRO_ENVIRONMENT_SET_CONTROLLER_INFO,
-    RETRO_ENVIRONMENT_SET_CORE_OPTIONS_UPDATE_DISPLAY_CALLBACK,
-    RETRO_ENVIRONMENT_SET_CORE_OPTIONS_V2_INTL, RETRO_ENVIRONMENT_SET_GEOMETRY,
-    RETRO_ENVIRONMENT_SET_INPUT_DESCRIPTORS, RETRO_ENVIRONMENT_SET_PIXEL_FORMAT,
-    RETRO_ENVIRONMENT_SET_SUBSYSTEM_INFO, RETRO_ENVIRONMENT_SET_SUPPORT_NO_GAME,
-    RETRO_ENVIRONMENT_SET_VARIABLES,
+use crate::{
+    binding_libretro::{
+        retro_core_option_display, retro_core_options_v2_intl, retro_language, retro_pixel_format,
+        RETRO_ENVIRONMENT_GET_CORE_OPTIONS_VERSION, RETRO_ENVIRONMENT_GET_LANGUAGE,
+        RETRO_ENVIRONMENT_GET_LOG_INTERFACE, RETRO_ENVIRONMENT_SET_CONTROLLER_INFO,
+        RETRO_ENVIRONMENT_SET_CORE_OPTIONS_DISPLAY,
+        RETRO_ENVIRONMENT_SET_CORE_OPTIONS_UPDATE_DISPLAY_CALLBACK,
+        RETRO_ENVIRONMENT_SET_CORE_OPTIONS_V2_INTL, RETRO_ENVIRONMENT_SET_GEOMETRY,
+        RETRO_ENVIRONMENT_SET_INPUT_DESCRIPTORS, RETRO_ENVIRONMENT_SET_PIXEL_FORMAT,
+        RETRO_ENVIRONMENT_SET_SUBSYSTEM_INFO, RETRO_ENVIRONMENT_SET_SUPPORT_NO_GAME,
+        RETRO_ENVIRONMENT_SET_VARIABLES,
+    },
+    ffi_tools, option_manager,
+    retro_context::RetroContext,
 };
 use ::std::os::raw;
-use std::cell::RefCell;
 
-static mut CONTEXT: Option<Context> = None;
+static mut CONTEXT: Option<&'static RetroContext> = None;
 
-pub fn configure(
-    core_wrapper: CoreWrapper,
-    callback: CoreCallbacks,
-) -> Result<&'static Context, String> {
+pub fn configure(context: &'static RetroContext) {
     unsafe {
-        CONTEXT = Some(Context {
-            core: RefCell::new(core_wrapper),
-            callbacks: RefCell::new(callback),
-            options: RefCell::new(option_manager::OptionManager::new()),
-        });
-
-        match &CONTEXT {
-            Some(ctx) => Ok(ctx),
-            None => Err(String::from("value")),
-        }
+        CONTEXT = Some(context);
     }
 }
 
 pub unsafe extern "C" fn audio_sample_callback(left: i16, right: i16) {
-    match &CONTEXT {
-        Some(ctx) => (ctx.callbacks.borrow().audio_sample_callback)(left, right),
-        None => {}
+    if let Some(ctx) = CONTEXT {
+        (ctx.callbacks.borrow().audio_sample_callback)(left, right)
     }
 }
 
 pub unsafe extern "C" fn audio_sample_batch_callback(_data: *const i16, frames: usize) -> usize {
-    match &CONTEXT {
-        Some(ctx) => (ctx.callbacks.borrow().audio_sample_batch_callback)(_data, frames),
-        None => frames,
+    if let Some(ctx) = CONTEXT {
+        (ctx.callbacks.borrow().audio_sample_batch_callback)(_data, frames)
+    } else {
+        0
     }
 }
 
 pub unsafe extern "C" fn input_poll_callback() {
-    match &CONTEXT {
-        Some(ctx) => (ctx.callbacks.borrow().input_poll_callback)(),
-        None => {}
+    if let Some(ctx) = CONTEXT {
+        (ctx.callbacks.borrow().input_poll_callback)()
     }
 }
 
@@ -60,7 +49,7 @@ pub unsafe extern "C" fn input_state_callback(
     _index: raw::c_uint,
     _id: raw::c_uint,
 ) -> i16 {
-    match &CONTEXT {
+    match CONTEXT {
         Some(ctx) => (ctx.callbacks.borrow().input_state_callback)(
             _port as i16,
             _device as i16,
@@ -87,11 +76,11 @@ pub unsafe extern "C" fn core_environment(
         RETRO_ENVIRONMENT_SET_SUPPORT_NO_GAME => {
             println!("RETRO_ENVIRONMENT_SET_SUPPORT_NO_GAME -> ok");
 
-            match &CONTEXT {
+            match CONTEXT {
                 Some(ctx) => {
                     ctx.core.borrow_mut().support_no_game = *(_data as *mut bool);
                 }
-                None => {}
+                None => return false,
             }
 
             return true;
@@ -104,39 +93,42 @@ pub unsafe extern "C" fn core_environment(
         RETRO_ENVIRONMENT_SET_CORE_OPTIONS_V2_INTL => {
             println!("RETRO_ENVIRONMENT_SET_CORE_OPTIONS_V2_INTL -> ok");
 
-            match &CONTEXT {
+            match CONTEXT {
                 Some(ctx) => {
                     let options_v2 = *(_data as *mut retro_core_options_v2_intl);
-                    let _option_m = option_manager::convert_option_v2_intl(options_v2);
 
-                    ctx.options.borrow_mut().version = _option_m.version;
-                    ctx.options.borrow_mut().file_path = _option_m.file_path;
-                    ctx.options.borrow_mut().opts = _option_m.opts;
-                    ctx.options.borrow_mut().origin_ptr = _data;
-
-                    //TODO:preciso fornecer um nome para o arquivo onde as configurações serão salvas,
-                    //em seguida atualiza as configurações fornecidas pelo CORE
-                    //de acordo com as que estão salvas no arquivo (se ele existe!).
-                    //acho que vou fazer assim:
-                    //
-                    // ctx.options.borrow_mut().file_path = ?
-                    // ctx.options.borrow_mut().update_variables_from_file();
-                    //
-                    //minha duvida é onde vou colocar a callback retornada por RETRO_ENVIRONMENT_SET_CORE_OPTIONS_DISPLAY
+                    option_manager::convert_option_v2_intl(
+                        options_v2,
+                        &mut ctx.options.borrow_mut(),
+                    );
                 }
                 _ => return false,
             }
 
             return true;
         }
+        RETRO_ENVIRONMENT_SET_CORE_OPTIONS_DISPLAY => {
+            println!("RETRO_ENVIRONMENT_SET_CORE_OPTIONS_DISPLAY -> ok");
+
+            match CONTEXT {
+                Some(ctx) => {
+                    let option = *(_data as *mut retro_core_option_display);
+
+                    ctx.options
+                        .borrow_mut()
+                        .change_visibility(ffi_tools::get_str_from_ptr(option.key), option.visible)
+                }
+                _ => return false,
+            }
+        }
         RETRO_ENVIRONMENT_GET_LANGUAGE => {
             println!("RETRO_ENVIRONMENT_GET_LANGUAGE -> ok");
             *(_data as *mut retro_language) = retro_language::RETRO_LANGUAGE_ENGLISH;
-            match &CONTEXT {
+            match CONTEXT {
                 Some(ctx) => {
                     ctx.core.borrow_mut().language = *(_data as *mut retro_language);
                 }
-                None => {}
+                None => return false,
             }
             return true;
         }
@@ -146,11 +138,11 @@ pub unsafe extern "C" fn core_environment(
         RETRO_ENVIRONMENT_SET_PIXEL_FORMAT => {
             println!("RETRO_ENVIRONMENT_SET_PIXEL_FORMAT -> ok");
 
-            match &CONTEXT {
+            match CONTEXT {
                 Some(ctx) => {
                     ctx.core.borrow_mut().video.pixel_format = *(_data as *mut retro_pixel_format);
                 }
-                None => {}
+                None => return false,
             }
             return true;
         }
@@ -166,11 +158,11 @@ pub unsafe extern "C" fn core_environment(
         RETRO_ENVIRONMENT_SET_SUBSYSTEM_INFO => {
             println!("RETRO_ENVIRONMENT_SET_SUBSYSTEM_INFO");
 
-            match &CONTEXT {
+            match CONTEXT {
                 Some(ctx) => {
                     ctx.core.borrow_mut().use_subsystem = true;
                 }
-                None => {}
+                None => return false,
             }
         }
         RETRO_ENVIRONMENT_SET_CONTROLLER_INFO => {
@@ -217,25 +209,25 @@ mod environment {
 
     #[test]
     fn test_configure() {
-        let core_wrapper = CoreWrapper::new();
+        // let core_wrapper = CoreWrapper::new();
 
-        let callbacks = CoreCallbacks {
-            audio_sample_batch_callback,
-            audio_sample_callback,
-            input_poll_callback,
-            input_state_callback,
-            video_refresh_callback,
-        };
+        // let callbacks = CoreCallbacks {
+        //     audio_sample_batch_callback,
+        //     audio_sample_callback,
+        //     input_poll_callback,
+        //     input_state_callback,
+        //     video_refresh_callback,
+        // };
 
-        configure(core_wrapper, callbacks).unwrap();
+        // configure(core_wrapper, callbacks).unwrap();
 
-        //todo: testar o contexto
-        unsafe {
-            match &CONTEXT {
-                Some(_ctx) => {}
-                _ => {}
-            }
-        }
+        // //todo: testar o contexto
+        // unsafe {
+        //     match CONTEXT {
+        //         Some(_ctx) => {}
+        //         _ => {}
+        //     }
+        // }
     }
 
     #[test]
@@ -254,7 +246,7 @@ mod environment {
                 result,
             );
 
-            match &CONTEXT {
+            match CONTEXT {
                 Some(ctx) => assert_eq!(
                     ctx.core.borrow().support_no_game,
                     my_bool,
@@ -283,7 +275,7 @@ mod environment {
                 result,
             );
 
-            match &CONTEXT {
+            match CONTEXT {
                 Some(ctx) => assert_eq!(
                     ctx.core.borrow().language,
                     language,
@@ -312,7 +304,7 @@ mod environment {
                 result,
             );
 
-            match &CONTEXT {
+            match CONTEXT {
                 Some(ctx) => assert_eq!(
                     ctx.core.borrow().video.pixel_format,
                     pixel,

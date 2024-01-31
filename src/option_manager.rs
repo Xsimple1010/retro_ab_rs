@@ -21,6 +21,7 @@ pub enum OptionVersion {
 
 pub struct Options {
     pub key: String,
+    pub visibility: bool,
     pub desc: String,
     pub desc_categorized: String,
     pub info: String,
@@ -37,20 +38,14 @@ pub struct OptionManager {
     pub origin_ptr: *mut c_void,
 }
 
-impl Default for OptionManager {
-    fn default() -> Self {
-        Self::new()
-    }
-}
-
 impl OptionManager {
-    pub fn new() -> OptionManager {
+    pub fn new(file_path: PathBuf) -> OptionManager {
         let expect_value = "".to_owned();
         let origin_ptr = &expect_value as *const String as *mut c_void;
 
         OptionManager {
             version: OptionVersion::V2,
-            file_path: PathBuf::from(""),
+            file_path,
             opts: Vec::new(),
             origin_ptr,
         }
@@ -63,6 +58,14 @@ impl OptionManager {
             OptionVersion::V1 => {}
             OptionVersion::V2Intl => self.update_value_v2_intl(key, value),
             OptionVersion::V2 => {}
+        }
+    }
+
+    pub fn change_visibility(&mut self, key: String, visibility: bool) {
+        for opt in &mut self.opts {
+            if opt.key == key {
+                opt.visibility = visibility;
+            }
         }
     }
 
@@ -102,6 +105,7 @@ fn get_v2_intl_definitions(
 
             options_manager.opts.push(Options {
                 key,
+                visibility: true,
                 default_value,
                 info,
                 desc,
@@ -116,20 +120,20 @@ fn get_v2_intl_definitions(
     }
 }
 
-pub fn convert_option_v2_intl(option_intl_v2: retro_core_options_v2_intl) -> OptionManager {
-    let mut options_manager = OptionManager::new();
+pub fn convert_option_v2_intl(
+    option_intl_v2: retro_core_options_v2_intl,
+    options_manager: &mut OptionManager,
+) {
     options_manager.version = OptionVersion::V2Intl;
 
     unsafe {
         if option_intl_v2.local.is_null() {
             let us: retro_core_options_v2 = *(option_intl_v2.us);
-            get_v2_intl_definitions(us.definitions, &mut options_manager);
+            get_v2_intl_definitions(us.definitions, options_manager);
         } else {
             let local: retro_core_options_v2 = *(option_intl_v2.local);
-            get_v2_intl_definitions(local.definitions, &mut options_manager);
+            get_v2_intl_definitions(local.definitions, options_manager);
         }
     }
-
-    options_manager
 }
 //===============================================
