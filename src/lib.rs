@@ -10,6 +10,8 @@ mod retro_context;
 
 #[cfg(test)]
 mod lib_fns {
+    use std::rc::Rc;
+
     use crate::*;
 
     fn audio_sample_callback(_left: i16, _right: i16) {}
@@ -34,7 +36,7 @@ mod lib_fns {
     ) {
     }
 
-    static mut CONTEXT: Option<&'static core::RetroContext> = None;
+    static mut CONTEXT: Option<Rc<core::RetroContext>> = None;
 
     #[test]
     fn load_core() {
@@ -66,10 +68,10 @@ mod lib_fns {
         core::init();
 
         unsafe {
-            match CONTEXT {
+            match &CONTEXT {
                 Some(ctx) => {
                     assert_eq!(
-                        ctx.core.borrow().initialized,
+                        *ctx.core.initialized.borrow(),
                         true,
                         "o CORE nao foi inicializado"
                     );
@@ -87,10 +89,10 @@ mod lib_fns {
         core::de_init();
 
         unsafe {
-            match CONTEXT {
+            match &CONTEXT {
                 Some(ctx) => {
                     assert_eq!(
-                        ctx.core.borrow().initialized,
+                        *ctx.core.initialized.borrow(),
                         false,
                         "o CORE nao foi inicializado"
                     );

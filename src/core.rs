@@ -1,3 +1,5 @@
+use std::{cell::RefCell, rc::Rc};
+
 use super::environment;
 use crate::{
     binding_libretro::{retro_language, retro_pixel_format, LibretroRaw},
@@ -7,21 +9,21 @@ use crate::{
 pub use crate::retro_context::RetroContext;
 
 pub struct SysInfo {
-    pub library_name: String,
-    pub library_version: String,
-    pub valid_extensions: String,
-    pub need_fullpath: bool,
-    pub block_extract: bool,
+    pub library_name: RefCell<String>,
+    pub library_version: RefCell<String>,
+    pub valid_extensions: RefCell<String>,
+    pub need_fullpath: RefCell<bool>,
+    pub block_extract: RefCell<bool>,
 }
 
 impl SysInfo {
     fn new() -> SysInfo {
         SysInfo {
-            library_name: "".to_owned(),
-            library_version: "".to_owned(),
-            valid_extensions: "".to_owned(),
-            block_extract: false,
-            need_fullpath: false,
+            library_name: RefCell::new("".to_owned()),
+            library_version: RefCell::new("".to_owned()),
+            valid_extensions: RefCell::new("".to_owned()),
+            block_extract: RefCell::new(false),
+            need_fullpath: RefCell::new(false),
         }
     }
 }
@@ -35,22 +37,22 @@ pub struct CoreCallbacks {
 }
 
 pub struct Video {
-    pub can_dupe: bool,
-    pub had_frame: bool,
-    pub last_width: u32,
-    pub last_height: u32,
-    pub last_pitch: usize,
-    pub pixel_format: retro_pixel_format,
-    pub frame_delta: Option<i64>,
+    pub can_dupe: RefCell<bool>,
+    pub had_frame: RefCell<bool>,
+    pub last_width: RefCell<u32>,
+    pub last_height: RefCell<u32>,
+    pub last_pitch: RefCell<usize>,
+    pub pixel_format: RefCell<retro_pixel_format>,
+    pub frame_delta: RefCell<Option<i64>>,
 }
 
 pub struct CoreWrapper {
-    pub initialized: bool,
+    pub initialized: RefCell<bool>,
     pub video: Video,
-    pub supports_bitmasks: bool,
-    pub support_no_game: bool,
-    pub use_subsystem: bool,
-    pub language: retro_language,
+    pub supports_bitmasks: RefCell<bool>,
+    pub support_no_game: RefCell<bool>,
+    pub use_subsystem: RefCell<bool>,
+    pub language: RefCell<retro_language>,
     pub sys_info: SysInfo,
 }
 
@@ -63,27 +65,27 @@ impl Default for CoreWrapper {
 impl CoreWrapper {
     pub fn new() -> CoreWrapper {
         CoreWrapper {
-            initialized: false,
-            support_no_game: false,
-            use_subsystem: false,
-            language: retro_language::RETRO_LANGUAGE_PORTUGUESE_BRAZIL,
-            supports_bitmasks: false,
+            initialized: RefCell::new(false),
+            support_no_game: RefCell::new(false),
+            use_subsystem: RefCell::new(false),
+            language: RefCell::new(retro_language::RETRO_LANGUAGE_PORTUGUESE_BRAZIL),
+            supports_bitmasks: RefCell::new(false),
             sys_info: SysInfo::new(),
             video: Video {
-                can_dupe: false,
-                frame_delta: Some(0),
-                had_frame: false,
-                last_height: 0,
-                last_width: 0,
-                last_pitch: 0,
-                pixel_format: retro_pixel_format::RETRO_PIXEL_FORMAT_UNKNOWN,
+                can_dupe: RefCell::new(false),
+                frame_delta: RefCell::new(Some(0)),
+                had_frame: RefCell::new(false),
+                last_height: RefCell::new(0),
+                last_width: RefCell::new(0),
+                last_pitch: RefCell::new(0),
+                pixel_format: RefCell::new(retro_pixel_format::RETRO_PIXEL_FORMAT_UNKNOWN),
             },
         }
     }
 }
 
 static mut RAW: Option<LibretroRaw> = None;
-static mut CONTEXT: Option<RetroContext> = None;
+static mut CONTEXT: Option<Rc<RetroContext>> = None;
 
 pub fn run() {
     unsafe {
@@ -100,7 +102,7 @@ pub fn de_init() {
             Some(raw) => {
                 if let Some(ctx) = &CONTEXT {
                     raw.retro_deinit();
-                    ctx.core.borrow_mut().initialized = false;
+                    *ctx.core.initialized.borrow_mut() = false;
                 }
             }
             None => {}
@@ -123,7 +125,7 @@ pub fn init() {
             Some(raw) => {
                 if let Some(ctx) = &CONTEXT {
                     raw.retro_init();
-                    ctx.core.borrow_mut().initialized = true;
+                    *ctx.core.initialized.borrow_mut() = true;
                 }
             }
             None => {}
@@ -140,7 +142,7 @@ pub fn load_game(path: String) {
     }
 }
 
-pub fn load(path: &String, callbacks: CoreCallbacks) -> Result<&'static RetroContext, String> {
+pub fn load(path: &String, callbacks: CoreCallbacks) -> Result<Rc<RetroContext>, String> {
     unsafe {
         let result = LibretroRaw::new(path);
 
@@ -151,7 +153,7 @@ pub fn load(path: &String, callbacks: CoreCallbacks) -> Result<&'static RetroCon
 
                 match &CONTEXT {
                     Some(ctx) => {
-                        environment::configure(ctx);
+                        environment::configure(Rc::clone(ctx));
 
                         match &RAW {
                             Some(raw) => {
@@ -171,7 +173,7 @@ pub fn load(path: &String, callbacks: CoreCallbacks) -> Result<&'static RetroCon
                             None => {}
                         }
 
-                        Ok(ctx)
+                        Ok(Rc::clone(ctx))
                     }
                     None => Err(String::from("value")),
                 }

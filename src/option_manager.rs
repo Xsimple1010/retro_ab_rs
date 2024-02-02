@@ -2,12 +2,13 @@ use crate::{
     binding_libretro::{
         retro_core_option_v2_definition, retro_core_options_v2, retro_core_options_v2_intl,
     },
-    ffi_tools,
+    ffi_tools::get_str_from_ptr,
+    retro_context::RetroContext,
 };
-use std::{ffi::c_void, path::PathBuf};
+use std::{cell::RefCell, ffi::c_void, path::PathBuf, rc::Rc};
 pub struct Values {
-    pub value: String,
-    pub label: String,
+    pub value: RefCell<String>,
+    pub label: RefCell<String>,
 }
 
 #[derive(Debug, Copy, Clone, Hash, PartialEq, Eq)]
@@ -20,22 +21,22 @@ pub enum OptionVersion {
 }
 
 pub struct Options {
-    pub key: String,
-    pub visibility: bool,
-    pub desc: String,
-    pub desc_categorized: String,
-    pub info: String,
-    pub info_categorized: String,
-    pub category_key: String,
-    pub values: Vec<Values>,
-    pub default_value: String,
+    pub key: RefCell<String>,
+    pub visibility: RefCell<bool>,
+    pub desc: RefCell<String>,
+    pub desc_categorized: RefCell<String>,
+    pub info: RefCell<String>,
+    pub info_categorized: RefCell<String>,
+    pub category_key: RefCell<String>,
+    pub values: RefCell<Vec<Values>>,
+    pub default_value: RefCell<String>,
 }
 
 pub struct OptionManager {
-    pub version: OptionVersion,
-    pub file_path: PathBuf,
-    pub opts: Vec<Options>,
-    pub origin_ptr: *mut c_void,
+    pub version: RefCell<OptionVersion>,
+    pub file_path: RefCell<PathBuf>,
+    pub opts: RefCell<Vec<Options>>,
+    pub origin_ptr: RefCell<*mut c_void>,
 }
 
 impl OptionManager {
@@ -44,34 +45,34 @@ impl OptionManager {
         let origin_ptr = &expect_value as *const String as *mut c_void;
 
         OptionManager {
-            version: OptionVersion::V2,
-            file_path,
-            opts: Vec::new(),
-            origin_ptr,
+            version: RefCell::new(OptionVersion::V2),
+            file_path: RefCell::new(file_path),
+            opts: RefCell::new(Vec::new()),
+            origin_ptr: RefCell::new(origin_ptr),
         }
     }
+}
 
-    pub fn update(&self, key: &str, value: &str) {
-        match self.version {
-            OptionVersion::Legacy => {}
-            OptionVersion::V1Intl => {}
-            OptionVersion::V1 => {}
-            OptionVersion::V2Intl => self.update_value_v2_intl(key, value),
-            OptionVersion::V2 => {}
+pub fn update(ctx: Rc<RetroContext>, key: &str, value: &str) {
+    match *ctx.options.version.borrow() {
+        OptionVersion::Legacy => {}
+        OptionVersion::V1Intl => {}
+        OptionVersion::V1 => {}
+        OptionVersion::V2Intl => update_value_v2_intl(key, value),
+        OptionVersion::V2 => {}
+    }
+}
+
+pub fn change_visibility(ctx: Rc<RetroContext>, key: String, visibility: bool) {
+    for opt in &mut *ctx.options.opts.borrow_mut() {
+        if *opt.key.borrow() == key {
+            *opt.visibility.borrow_mut() = visibility;
         }
     }
+}
 
-    pub fn change_visibility(&mut self, key: String, visibility: bool) {
-        for opt in &mut self.opts {
-            if opt.key == key {
-                opt.visibility = visibility;
-            }
-        }
-    }
-
-    fn update_value_v2_intl(&self, _key: &str, _value: &str) {
-        let _op = unsafe { *(self.origin_ptr as *mut retro_core_options_v2_intl) };
-    }
+fn update_value_v2_intl(_key: &str, _value: &str) {
+    // let _op = unsafe { *(self.origin_ptr as *mut retro_core_options_v2_intl) };
 }
 
 //===============================================
@@ -79,33 +80,33 @@ impl OptionManager {
 //===============================================
 fn get_v2_intl_definitions(
     definitions: *mut retro_core_option_v2_definition,
-    options_manager: &mut OptionManager,
+    ctx: Rc<RetroContext>,
 ) {
     let definitions = unsafe { *(definitions as *mut [retro_core_option_v2_definition; 90]) };
 
     for definition in definitions {
         if !definition.key.is_null() {
-            let key = ffi_tools::get_str_from_ptr(definition.key);
-            let default_value = ffi_tools::get_str_from_ptr(definition.default_value);
-            let info = ffi_tools::get_str_from_ptr(definition.info);
-            let desc = ffi_tools::get_str_from_ptr(definition.desc);
-            let desc_categorized = ffi_tools::get_str_from_ptr(definition.desc_categorized);
-            let category_key = ffi_tools::get_str_from_ptr(definition.category_key);
-            let info_categorized = ffi_tools::get_str_from_ptr(definition.info_categorized);
-            let mut values: Vec<Values> = Vec::new();
+            let key = RefCell::new(get_str_from_ptr(definition.key));
+            let default_value = RefCell::new(get_str_from_ptr(definition.default_value));
+            let info = RefCell::new(get_str_from_ptr(definition.info));
+            let desc = RefCell::new(get_str_from_ptr(definition.desc));
+            let desc_categorized = RefCell::new(get_str_from_ptr(definition.desc_categorized));
+            let category_key = RefCell::new(get_str_from_ptr(definition.category_key));
+            let info_categorized = RefCell::new(get_str_from_ptr(definition.info_categorized));
+            let values = RefCell::new(Vec::new());
 
             for retro_value in definition.values {
                 if !retro_value.label.is_null() {
-                    let value = ffi_tools::get_str_from_ptr(retro_value.value);
-                    let label = ffi_tools::get_str_from_ptr(retro_value.label);
+                    let value = RefCell::new(get_str_from_ptr(retro_value.value));
+                    let label = RefCell::new(get_str_from_ptr(retro_value.label));
 
-                    values.push(Values { label, value });
+                    values.borrow_mut().push(Values { label, value });
                 }
             }
 
-            options_manager.opts.push(Options {
+            ctx.options.opts.borrow_mut().push(Options {
                 key,
-                visibility: true,
+                visibility: RefCell::new(true),
                 default_value,
                 info,
                 desc,
@@ -120,19 +121,16 @@ fn get_v2_intl_definitions(
     }
 }
 
-pub fn convert_option_v2_intl(
-    option_intl_v2: retro_core_options_v2_intl,
-    options_manager: &mut OptionManager,
-) {
-    options_manager.version = OptionVersion::V2Intl;
+pub fn convert_option_v2_intl(option_intl_v2: retro_core_options_v2_intl, ctx: Rc<RetroContext>) {
+    *ctx.options.version.borrow_mut() = OptionVersion::V2Intl;
 
     unsafe {
         if option_intl_v2.local.is_null() {
             let us: retro_core_options_v2 = *(option_intl_v2.us);
-            get_v2_intl_definitions(us.definitions, options_manager);
+            get_v2_intl_definitions(us.definitions, ctx);
         } else {
             let local: retro_core_options_v2 = *(option_intl_v2.local);
-            get_v2_intl_definitions(local.definitions, options_manager);
+            get_v2_intl_definitions(local.definitions, ctx);
         }
     }
 }

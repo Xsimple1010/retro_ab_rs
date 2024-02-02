@@ -14,32 +14,33 @@ use crate::{
     retro_context::RetroContext,
 };
 use ::std::os::raw;
+use std::rc::Rc;
 
-static mut CONTEXT: Option<&'static RetroContext> = None;
+static mut CONTEXT: Option<Rc<RetroContext>> = None;
 
-pub fn configure(context: &'static RetroContext) {
+pub fn configure(context: Rc<RetroContext>) {
     unsafe {
         CONTEXT = Some(context);
     }
 }
 
 pub unsafe extern "C" fn audio_sample_callback(left: i16, right: i16) {
-    if let Some(ctx) = CONTEXT {
-        (ctx.callbacks.borrow().audio_sample_callback)(left, right)
+    if let Some(ctx) = &CONTEXT {
+        (ctx.callbacks.audio_sample_callback)(left, right)
     }
 }
 
 pub unsafe extern "C" fn audio_sample_batch_callback(_data: *const i16, frames: usize) -> usize {
-    if let Some(ctx) = CONTEXT {
-        (ctx.callbacks.borrow().audio_sample_batch_callback)(_data, frames)
+    if let Some(ctx) = &CONTEXT {
+        (ctx.callbacks.audio_sample_batch_callback)(_data, frames)
     } else {
         0
     }
 }
 
 pub unsafe extern "C" fn input_poll_callback() {
-    if let Some(ctx) = CONTEXT {
-        (ctx.callbacks.borrow().input_poll_callback)()
+    if let Some(ctx) = &CONTEXT {
+        (ctx.callbacks.input_poll_callback)()
     }
 }
 
@@ -49,8 +50,8 @@ pub unsafe extern "C" fn input_state_callback(
     _index: raw::c_uint,
     _id: raw::c_uint,
 ) -> i16 {
-    match CONTEXT {
-        Some(ctx) => (ctx.callbacks.borrow().input_state_callback)(
+    match &CONTEXT {
+        Some(ctx) => (ctx.callbacks.input_state_callback)(
             _port as i16,
             _device as i16,
             _index as i16,
@@ -76,9 +77,9 @@ pub unsafe extern "C" fn core_environment(
         RETRO_ENVIRONMENT_SET_SUPPORT_NO_GAME => {
             println!("RETRO_ENVIRONMENT_SET_SUPPORT_NO_GAME -> ok");
 
-            match CONTEXT {
+            match &CONTEXT {
                 Some(ctx) => {
-                    ctx.core.borrow_mut().support_no_game = *(_data as *mut bool);
+                    *ctx.core.support_no_game.borrow_mut() = *(_data as *mut bool);
                 }
                 None => return false,
             }
@@ -93,14 +94,11 @@ pub unsafe extern "C" fn core_environment(
         RETRO_ENVIRONMENT_SET_CORE_OPTIONS_V2_INTL => {
             println!("RETRO_ENVIRONMENT_SET_CORE_OPTIONS_V2_INTL -> ok");
 
-            match CONTEXT {
+            match &CONTEXT {
                 Some(ctx) => {
                     let options_v2 = *(_data as *mut retro_core_options_v2_intl);
 
-                    option_manager::convert_option_v2_intl(
-                        options_v2,
-                        &mut ctx.options.borrow_mut(),
-                    );
+                    option_manager::convert_option_v2_intl(options_v2, Rc::clone(ctx));
                 }
                 _ => return false,
             }
@@ -110,23 +108,27 @@ pub unsafe extern "C" fn core_environment(
         RETRO_ENVIRONMENT_SET_CORE_OPTIONS_DISPLAY => {
             println!("RETRO_ENVIRONMENT_SET_CORE_OPTIONS_DISPLAY -> ok");
 
-            match CONTEXT {
+            match &CONTEXT {
                 Some(ctx) => {
                     let option = *(_data as *mut retro_core_option_display);
 
-                    ctx.options
-                        .borrow_mut()
-                        .change_visibility(ffi_tools::get_str_from_ptr(option.key), option.visible)
+                    option_manager::change_visibility(
+                        Rc::clone(ctx),
+                        ffi_tools::get_str_from_ptr(option.key),
+                        option.visible,
+                    )
                 }
                 _ => return false,
             }
+
+            return true;
         }
         RETRO_ENVIRONMENT_GET_LANGUAGE => {
             println!("RETRO_ENVIRONMENT_GET_LANGUAGE -> ok");
             *(_data as *mut retro_language) = retro_language::RETRO_LANGUAGE_ENGLISH;
-            match CONTEXT {
+            match &CONTEXT {
                 Some(ctx) => {
-                    ctx.core.borrow_mut().language = *(_data as *mut retro_language);
+                    *ctx.core.language.borrow_mut() = *(_data as *mut retro_language);
                 }
                 None => return false,
             }
@@ -138,9 +140,9 @@ pub unsafe extern "C" fn core_environment(
         RETRO_ENVIRONMENT_SET_PIXEL_FORMAT => {
             println!("RETRO_ENVIRONMENT_SET_PIXEL_FORMAT -> ok");
 
-            match CONTEXT {
+            match &CONTEXT {
                 Some(ctx) => {
-                    ctx.core.borrow_mut().video.pixel_format = *(_data as *mut retro_pixel_format);
+                    *ctx.core.video.pixel_format.borrow_mut() = *(_data as *mut retro_pixel_format);
                 }
                 None => return false,
             }
@@ -158,9 +160,9 @@ pub unsafe extern "C" fn core_environment(
         RETRO_ENVIRONMENT_SET_SUBSYSTEM_INFO => {
             println!("RETRO_ENVIRONMENT_SET_SUBSYSTEM_INFO");
 
-            match CONTEXT {
+            match &CONTEXT {
                 Some(ctx) => {
-                    ctx.core.borrow_mut().use_subsystem = true;
+                    *ctx.core.use_subsystem.borrow_mut() = true;
                 }
                 None => return false,
             }
@@ -183,6 +185,8 @@ pub unsafe extern "C" fn core_environment(
 
 #[cfg(test)]
 mod environment {
+    use crate::core::{self, CoreCallbacks};
+
     use super::*;
 
     fn audio_sample_callback(_left: i16, _right: i16) {}
@@ -209,25 +213,23 @@ mod environment {
 
     #[test]
     fn test_configure() {
-        // let core_wrapper = CoreWrapper::new();
+        let callbacks = CoreCallbacks {
+            audio_sample_batch_callback,
+            audio_sample_callback,
+            input_poll_callback,
+            input_state_callback,
+            video_refresh_callback,
+        };
 
-        // let callbacks = CoreCallbacks {
-        //     audio_sample_batch_callback,
-        //     audio_sample_callback,
-        //     input_poll_callback,
-        //     input_state_callback,
-        //     video_refresh_callback,
-        // };
+        let path = "cores/test.dll".to_string();
+        let context = core::load(&path, callbacks);
 
-        // configure(core_wrapper, callbacks).unwrap();
-
-        // //todo: testar o contexto
-        // unsafe {
-        //     match CONTEXT {
-        //         Some(_ctx) => {}
-        //         _ => {}
-        //     }
-        // }
+        match context {
+            Ok(ctx) => {
+                configure(ctx);
+            }
+            _ => {}
+        }
     }
 
     #[test]
@@ -246,13 +248,13 @@ mod environment {
                 result,
             );
 
-            match CONTEXT {
+            match &CONTEXT {
                 Some(ctx) => assert_eq!(
-                    ctx.core.borrow().support_no_game,
+                    *ctx.core.support_no_game.borrow(),
                     my_bool,
                     "returno inesperado: valor desejado -> {:?}; valor recebido -> {:?}",
                     my_bool,
-                    ctx.core.borrow().support_no_game
+                    *ctx.core.support_no_game.borrow()
                 ),
                 _ => panic!("contexto nao foi encontrado"),
             }
@@ -275,13 +277,13 @@ mod environment {
                 result,
             );
 
-            match CONTEXT {
+            match &CONTEXT {
                 Some(ctx) => assert_eq!(
-                    ctx.core.borrow().language,
+                    *ctx.core.language.borrow(),
                     language,
                     "returno inesperado: valor desejado -> {:?}; valor recebido -> {:?}",
                     language,
-                    ctx.core.borrow().language
+                    *ctx.core.language.borrow()
                 ),
                 _ => panic!("contexto nao foi encontrado"),
             }
@@ -304,13 +306,13 @@ mod environment {
                 result,
             );
 
-            match CONTEXT {
+            match &CONTEXT {
                 Some(ctx) => assert_eq!(
-                    ctx.core.borrow().video.pixel_format,
+                    *ctx.core.video.pixel_format.borrow(),
                     pixel,
                     "returno inesperado: valor desejado -> {:?}; valor recebido -> {:?}",
                     pixel,
-                    ctx.core.borrow().video.pixel_format
+                    *ctx.core.video.pixel_format.borrow()
                 ),
                 _ => panic!("contexto nao foi encontrado"),
             }

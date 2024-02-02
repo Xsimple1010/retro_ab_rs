@@ -1,5 +1,5 @@
 use retro_ab::core;
-use std::env;
+use std::{env, rc::Rc};
 
 fn audio_sample_callback(_left: i16, _right: i16) {}
 
@@ -26,7 +26,7 @@ fn video_refresh_callback(
 fn main() {
     let value = retro_ab::args_manager::get_values(env::args().collect());
 
-    let mut context: Option<&'static core::RetroContext> = None;
+    let mut context: Option<Rc<core::RetroContext>> = None;
 
     let callbacks = core::CoreCallbacks {
         audio_sample_batch_callback,
@@ -52,27 +52,30 @@ fn main() {
         Some(ctx) => {
             println!("=======core context=======");
             println!("core version -> {:?}", core::version());
-            println!("subsystem -> {:?}", ctx.core.borrow().use_subsystem);
-            println!("pixel format -> {:?}", ctx.core.borrow().video.pixel_format);
-            println!("language -> {:?}", ctx.core.borrow().language);
+            println!("subsystem -> {:?}", *ctx.core.use_subsystem.borrow());
+            println!(
+                "pixel format -> {:?}",
+                *ctx.core.video.pixel_format.borrow()
+            );
+            println!("language -> {:?}", *ctx.core.language.borrow());
 
-            println!("options version -> {:?}", ctx.options.borrow().version);
+            // println!("options version -> {:?}", *ctx.options.version.borrow());
 
-            println!("sys -> {:?}", ctx.core.borrow().sys_info.library_name);
-            println!("sys -> {:?}", ctx.core.borrow().sys_info.library_version);
-            println!("sys -> {:?}", ctx.core.borrow().sys_info.valid_extensions);
-            println!("sys -> {:?}", ctx.options.borrow_mut().file_path);
+            println!("sys -> {:?}", ctx.core.sys_info.library_name.borrow());
+            println!("sys -> {:?}", ctx.core.sys_info.library_version.borrow());
+            println!("sys -> {:?}", ctx.core.sys_info.valid_extensions.borrow());
+            println!("sys -> {:?}", ctx.options.file_path.borrow());
             // println!("sys -> {:?}", ctx.core.borrow().version);
-            // println!("options here\n");
-            // for opt in &ctx.options.borrow().opts {
-            // println!("{:?}", opt.key);
-            // println!("{:?}", opt.visibility);
-            // println!("{:?}", opt.desc_categorized);
-            // println!("{:?}", opt.info);
-            // println!("{:?}", opt.info_categorized);
-            // println!("{:?}", opt.default_value);
-            // println!("");
-            // }
+            println!("options here\n");
+            for opt in &*ctx.options.opts.borrow() {
+                println!("{:?}", opt.key);
+                println!("{:?}", opt.visibility);
+                println!("{:?}", opt.desc_categorized);
+                println!("{:?}", opt.info);
+                println!("{:?}", opt.info_categorized);
+                println!("{:?}", opt.default_value);
+                println!("");
+            }
         }
         None => {}
     }

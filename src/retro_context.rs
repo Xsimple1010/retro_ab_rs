@@ -1,4 +1,4 @@
-use std::{cell::RefCell, path::PathBuf};
+use std::{cell::RefCell, path::PathBuf, rc::Rc};
 
 use crate::{
     binding_libretro::{retro_system_info, LibretroRaw},
@@ -8,9 +8,9 @@ use crate::{
 };
 
 pub struct RetroContext {
-    pub core: RefCell<CoreWrapper>,
-    pub callbacks: RefCell<CoreCallbacks>,
-    pub options: RefCell<OptionManager>,
+    pub core: CoreWrapper,
+    pub callbacks: CoreCallbacks,
+    pub options: OptionManager,
 }
 
 pub fn get_sys_info(raw: &LibretroRaw) -> SysInfo {
@@ -28,31 +28,32 @@ pub fn get_sys_info(raw: &LibretroRaw) -> SysInfo {
         let sys_info = *(sys_info as *mut retro_system_info);
 
         SysInfo {
-            library_name: ffi_tools::get_str_from_ptr(sys_info.library_name),
-            library_version: ffi_tools::get_str_from_ptr(sys_info.library_version),
-            valid_extensions: ffi_tools::get_str_from_ptr(sys_info.valid_extensions),
-            need_fullpath: sys_info.need_fullpath,
-            block_extract: sys_info.block_extract,
+            library_name: RefCell::new(ffi_tools::get_str_from_ptr(sys_info.library_name)),
+            library_version: RefCell::new(ffi_tools::get_str_from_ptr(sys_info.library_version)),
+            valid_extensions: RefCell::new(ffi_tools::get_str_from_ptr(sys_info.valid_extensions)),
+            need_fullpath: RefCell::new(sys_info.need_fullpath),
+            block_extract: RefCell::new(sys_info.block_extract),
         }
     }
 }
 
-pub fn create(raw: &LibretroRaw, callbacks: CoreCallbacks) -> RetroContext {
+pub fn create(raw: &LibretroRaw, callbacks: CoreCallbacks) -> Rc<RetroContext> {
     let sys_info = get_sys_info(raw);
 
-    let context = RetroContext {
-        core: RefCell::new(CoreWrapper::new()),
-        callbacks: RefCell::new(callbacks),
-        options: RefCell::new(OptionManager::new(
-            PathBuf::from("cfg").join(sys_info.library_name.clone() + ".opt"),
-        )),
-    };
+    let context = Rc::new(RetroContext {
+        core: CoreWrapper::new(),
+        callbacks: callbacks,
+        options: OptionManager::new(
+            PathBuf::from("cfg").join(sys_info.library_name.borrow().clone() + ".opt"),
+        ),
+    });
 
-    context.core.borrow_mut().sys_info.library_name = sys_info.library_name;
-    context.core.borrow_mut().sys_info.library_version = sys_info.library_version;
-    context.core.borrow_mut().sys_info.valid_extensions = sys_info.valid_extensions;
-    context.core.borrow_mut().sys_info.need_fullpath = sys_info.need_fullpath;
-    context.core.borrow_mut().sys_info.block_extract = sys_info.block_extract;
+    *context.core.sys_info.library_name.borrow_mut() = sys_info.library_name.borrow().clone();
+    *context.core.sys_info.library_version.borrow_mut() = sys_info.library_version.borrow().clone();
+    *context.core.sys_info.valid_extensions.borrow_mut() =
+        sys_info.valid_extensions.borrow().clone();
+    *context.core.sys_info.need_fullpath.borrow_mut() = sys_info.need_fullpath.borrow().clone();
+    *context.core.sys_info.block_extract.borrow_mut() = sys_info.block_extract.borrow().clone();
 
     context
 }
