@@ -10,8 +10,9 @@ use crate::{
         RETRO_ENVIRONMENT_SET_SUBSYSTEM_INFO, RETRO_ENVIRONMENT_SET_SUPPORT_NO_GAME,
         RETRO_ENVIRONMENT_SET_VARIABLES,
     },
-    ffi_tools, option_manager,
+    option_manager,
     retro_context::RetroContext,
+    tools,
 };
 use ::std::os::raw;
 use std::sync::Arc;
@@ -114,7 +115,7 @@ pub unsafe extern "C" fn core_environment(
 
                     option_manager::change_visibility(
                         Arc::clone(ctx),
-                        ffi_tools::get_str_from_ptr(option.key),
+                        tools::ffi_tools::get_str_from_ptr(option.key),
                         option.visible,
                     )
                 }

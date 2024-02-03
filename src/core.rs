@@ -1,11 +1,10 @@
-use std::sync::{Arc, Mutex};
-
 use super::environment;
 use crate::{
     binding_libretro::{retro_language, retro_pixel_format, LibretroRaw},
-    game_tools,
     retro_context::{self, get_num_context},
+    tools,
 };
+use std::sync::{Arc, Mutex};
 
 pub use crate::retro_context::RetroContext;
 
@@ -104,7 +103,7 @@ pub fn init(ctx: &Arc<RetroContext>) {
 }
 
 pub fn load_game(ctx: &Arc<RetroContext>, path: &str) {
-    game_tools::load(&ctx.core.raw, path);
+    tools::game_tools::load(&ctx.core.raw, path);
 }
 
 pub fn load(path: &String, callbacks: CoreCallbacks) -> Result<Arc<RetroContext>, String> {

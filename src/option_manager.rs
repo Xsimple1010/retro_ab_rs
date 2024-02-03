@@ -2,8 +2,8 @@ use crate::{
     binding_libretro::{
         retro_core_option_v2_definition, retro_core_options_v2, retro_core_options_v2_intl,
     },
-    ffi_tools::get_str_from_ptr,
     retro_context::RetroContext,
+    tools::ffi_tools::get_str_from_ptr,
 };
 use std::{
     // ffi::c_void,
@@ -16,12 +16,13 @@ pub struct Values {
     pub label: Mutex<String>,
 }
 
-#[derive(Debug, Copy, Clone, Hash, PartialEq, Eq)]
+// #[derive(Debug, Copy, Clone, PartialEq, Eq)]
 pub enum OptionVersion {
     Legacy,
     V1Intl,
     V1,
     V2Intl,
+    // [[]]
     V2,
 }
 

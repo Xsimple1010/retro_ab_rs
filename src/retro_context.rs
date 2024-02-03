@@ -6,11 +6,13 @@ use std::{
 use crate::{
     binding_libretro::{retro_system_info, LibretroRaw},
     core::{CoreCallbacks, CoreWrapper, SysInfo},
-    ffi_tools,
     option_manager::OptionManager,
+    tools::ffi_tools::get_str_from_ptr,
 };
 
+// #[derive(Debug, Copy, Clone, PartialEq, Eq)]
 pub struct RetroContext {
+    pub id: String,
     pub core: CoreWrapper,
     pub callbacks: CoreCallbacks,
     pub options: OptionManager,
@@ -29,9 +31,9 @@ pub fn get_sys_info(raw: &LibretroRaw) -> SysInfo {
         raw.retro_get_system_info(sys_info);
 
         SysInfo {
-            library_name: Mutex::new(ffi_tools::get_str_from_ptr(sys_info.library_name)),
-            library_version: Mutex::new(ffi_tools::get_str_from_ptr(sys_info.library_version)),
-            valid_extensions: Mutex::new(ffi_tools::get_str_from_ptr(sys_info.valid_extensions)),
+            library_name: Mutex::new(get_str_from_ptr(sys_info.library_name)),
+            library_version: Mutex::new(get_str_from_ptr(sys_info.library_version)),
+            valid_extensions: Mutex::new(get_str_from_ptr(sys_info.valid_extensions)),
             need_fullpath: Mutex::new(sys_info.need_fullpath),
             block_extract: Mutex::new(sys_info.block_extract),
         }
@@ -46,10 +48,15 @@ pub fn get_num_context() -> usize {
     unsafe { CONTEXTS.len() }
 }
 
+fn create_id() -> String {
+    "".to_string()
+}
+
 pub fn create(raw: LibretroRaw, callbacks: CoreCallbacks) -> Arc<RetroContext> {
     let sys_info = get_sys_info(&raw);
 
     let context = Arc::new(RetroContext {
+        id: create_id(),
         core: CoreWrapper::new(raw),
         callbacks,
         options: OptionManager::new(
