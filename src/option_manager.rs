@@ -5,10 +5,15 @@ use crate::{
     ffi_tools::get_str_from_ptr,
     retro_context::RetroContext,
 };
-use std::{cell::RefCell, ffi::c_void, path::PathBuf, rc::Rc};
+use std::{
+    // ffi::c_void,
+    path::PathBuf,
+    rc::Rc,
+    sync::{Arc, Mutex},
+};
 pub struct Values {
-    pub value: RefCell<String>,
-    pub label: RefCell<String>,
+    pub value: Mutex<String>,
+    pub label: Mutex<String>,
 }
 
 #[derive(Debug, Copy, Clone, Hash, PartialEq, Eq)]
@@ -21,57 +26,58 @@ pub enum OptionVersion {
 }
 
 pub struct Options {
-    pub key: RefCell<String>,
-    pub visibility: RefCell<bool>,
-    pub desc: RefCell<String>,
-    pub desc_categorized: RefCell<String>,
-    pub info: RefCell<String>,
-    pub info_categorized: RefCell<String>,
-    pub category_key: RefCell<String>,
-    pub values: RefCell<Vec<Values>>,
-    pub default_value: RefCell<String>,
+    pub key: Mutex<String>,
+    pub visibility: Mutex<bool>,
+    pub desc: Mutex<String>,
+    pub desc_categorized: Mutex<String>,
+    pub info: Mutex<String>,
+    pub info_categorized: Mutex<String>,
+    pub category_key: Mutex<String>,
+    pub values: Mutex<Vec<Values>>,
+    pub default_value: Mutex<String>,
 }
 
 pub struct OptionManager {
-    pub version: RefCell<OptionVersion>,
-    pub file_path: RefCell<PathBuf>,
-    pub opts: RefCell<Vec<Options>>,
-    pub origin_ptr: RefCell<*mut c_void>,
+    pub version: Mutex<OptionVersion>,
+    pub file_path: Mutex<PathBuf>,
+    pub opts: Mutex<Vec<Options>>,
+    //FIXME:
+    // pub origin_ptr: Arc<Mutex<*mut c_void>>,
 }
 
 impl OptionManager {
     pub fn new(file_path: PathBuf) -> OptionManager {
-        let expect_value = "".to_owned();
-        let origin_ptr = &expect_value as *const String as *mut c_void;
+        // let expect_value = "".to_owned();
+        // let origin_ptr = &expect_value as *const String as *mut c_void;
 
         OptionManager {
-            version: RefCell::new(OptionVersion::V2),
-            file_path: RefCell::new(file_path),
-            opts: RefCell::new(Vec::new()),
-            origin_ptr: RefCell::new(origin_ptr),
+            version: Mutex::new(OptionVersion::V2),
+            file_path: Mutex::new(file_path),
+            opts: Mutex::new(Vec::new()),
+            // origin_ptr: Mutex::new(origin_ptr),
         }
     }
 }
 
-pub fn update(ctx: Rc<RetroContext>, key: &str, value: &str) {
-    match *ctx.options.version.borrow() {
+pub fn _update(ctx: Rc<RetroContext>, key: &str, value: &str) {
+    match *ctx.options.version.lock().unwrap() {
         OptionVersion::Legacy => {}
         OptionVersion::V1Intl => {}
         OptionVersion::V1 => {}
-        OptionVersion::V2Intl => update_value_v2_intl(key, value),
+        OptionVersion::V2Intl => _update_value_v2_intl(key, value),
         OptionVersion::V2 => {}
     }
 }
 
-pub fn change_visibility(ctx: Rc<RetroContext>, key: String, visibility: bool) {
-    for opt in &mut *ctx.options.opts.borrow_mut() {
-        if *opt.key.borrow() == key {
-            *opt.visibility.borrow_mut() = visibility;
+pub fn change_visibility(ctx: Arc<RetroContext>, key: String, visibility: bool) {
+    for opt in &mut *ctx.options.opts.lock().unwrap() {
+        if *opt.key.lock().unwrap() == key {
+            *opt.visibility.lock().unwrap() = visibility;
         }
     }
 }
 
-fn update_value_v2_intl(_key: &str, _value: &str) {
+fn _update_value_v2_intl(_key: &str, _value: &str) {
     // let _op = unsafe { *(self.origin_ptr as *mut retro_core_options_v2_intl) };
 }
 
@@ -80,33 +86,33 @@ fn update_value_v2_intl(_key: &str, _value: &str) {
 //===============================================
 fn get_v2_intl_definitions(
     definitions: *mut retro_core_option_v2_definition,
-    ctx: Rc<RetroContext>,
+    ctx: Arc<RetroContext>,
 ) {
     let definitions = unsafe { *(definitions as *mut [retro_core_option_v2_definition; 90]) };
 
     for definition in definitions {
         if !definition.key.is_null() {
-            let key = RefCell::new(get_str_from_ptr(definition.key));
-            let default_value = RefCell::new(get_str_from_ptr(definition.default_value));
-            let info = RefCell::new(get_str_from_ptr(definition.info));
-            let desc = RefCell::new(get_str_from_ptr(definition.desc));
-            let desc_categorized = RefCell::new(get_str_from_ptr(definition.desc_categorized));
-            let category_key = RefCell::new(get_str_from_ptr(definition.category_key));
-            let info_categorized = RefCell::new(get_str_from_ptr(definition.info_categorized));
-            let values = RefCell::new(Vec::new());
+            let key = Mutex::new(get_str_from_ptr(definition.key));
+            let default_value = Mutex::new(get_str_from_ptr(definition.default_value));
+            let info = Mutex::new(get_str_from_ptr(definition.info));
+            let desc = Mutex::new(get_str_from_ptr(definition.desc));
+            let desc_categorized = Mutex::new(get_str_from_ptr(definition.desc_categorized));
+            let category_key = Mutex::new(get_str_from_ptr(definition.category_key));
+            let info_categorized = Mutex::new(get_str_from_ptr(definition.info_categorized));
+            let values = Mutex::new(Vec::new());
 
             for retro_value in definition.values {
                 if !retro_value.label.is_null() {
-                    let value = RefCell::new(get_str_from_ptr(retro_value.value));
-                    let label = RefCell::new(get_str_from_ptr(retro_value.label));
+                    let value = Mutex::new(get_str_from_ptr(retro_value.value));
+                    let label = Mutex::new(get_str_from_ptr(retro_value.label));
 
-                    values.borrow_mut().push(Values { label, value });
+                    values.lock().unwrap().push(Values { label, value });
                 }
             }
 
-            ctx.options.opts.borrow_mut().push(Options {
+            ctx.options.opts.lock().unwrap().push(Options {
                 key,
-                visibility: RefCell::new(true),
+                visibility: Mutex::new(true),
                 default_value,
                 info,
                 desc,
@@ -121,8 +127,8 @@ fn get_v2_intl_definitions(
     }
 }
 
-pub fn convert_option_v2_intl(option_intl_v2: retro_core_options_v2_intl, ctx: Rc<RetroContext>) {
-    *ctx.options.version.borrow_mut() = OptionVersion::V2Intl;
+pub fn convert_option_v2_intl(option_intl_v2: retro_core_options_v2_intl, ctx: Arc<RetroContext>) {
+    *ctx.options.version.lock().unwrap() = OptionVersion::V2Intl;
 
     unsafe {
         if option_intl_v2.local.is_null() {

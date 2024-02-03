@@ -1,5 +1,5 @@
 use retro_ab::core;
-use std::{env, rc::Rc};
+use std::{env, sync::Arc};
 
 fn audio_sample_callback(_left: i16, _right: i16) {}
 
@@ -26,7 +26,7 @@ fn video_refresh_callback(
 fn main() {
     let value = retro_ab::args_manager::get_values(env::args().collect());
 
-    let mut context: Option<Rc<core::RetroContext>> = None;
+    let mut context: Option<Arc<core::RetroContext>> = None;
 
     let callbacks = core::CoreCallbacks {
         audio_sample_batch_callback,
@@ -51,23 +51,31 @@ fn main() {
     match context {
         Some(ctx) => {
             println!("=======core context=======");
-            println!("core version -> {:?}", core::version());
-            println!("subsystem -> {:?}", *ctx.core.use_subsystem.borrow());
+            println!("core version -> {:?}", core::version(&ctx));
+            println!("subsystem -> {:?}", *ctx.core.use_subsystem.lock().unwrap());
             println!(
                 "pixel format -> {:?}",
-                *ctx.core.video.pixel_format.borrow()
+                *ctx.core.video.pixel_format.lock().unwrap()
             );
-            println!("language -> {:?}", *ctx.core.language.borrow());
+            println!("language -> {:?}", *ctx.core.language.lock().unwrap());
 
-            // println!("options version -> {:?}", *ctx.options.version.borrow());
+            // println!("options version -> {:?}", *ctx.options.version.lock().unwrap());
 
-            println!("sys -> {:?}", ctx.core.sys_info.library_name.borrow());
-            println!("sys -> {:?}", ctx.core.sys_info.library_version.borrow());
-            println!("sys -> {:?}", ctx.core.sys_info.valid_extensions.borrow());
-            println!("sys -> {:?}", ctx.options.file_path.borrow());
-            // println!("sys -> {:?}", ctx.core.borrow().version);
+            println!(
+                "sys -> {:?}",
+                ctx.core.sys_info.library_name.lock().unwrap()
+            );
+            println!(
+                "sys -> {:?}",
+                ctx.core.sys_info.library_version.lock().unwrap()
+            );
+            println!(
+                "sys -> {:?}",
+                ctx.core.sys_info.valid_extensions.lock().unwrap()
+            );
+            println!("sys -> {:?}", ctx.options.file_path.lock().unwrap());
             println!("options here\n");
-            for opt in &*ctx.options.opts.borrow() {
+            for opt in &*ctx.options.opts.lock().unwrap() {
                 println!("{:?}", opt.key);
                 println!("{:?}", opt.visibility);
                 println!("{:?}", opt.desc_categorized);
@@ -76,6 +84,7 @@ fn main() {
                 println!("{:?}", opt.default_value);
                 println!("");
             }
+            core::de_init(ctx);
         }
         None => {}
     }
