@@ -25,6 +25,12 @@ pub fn configure(context: Arc<RetroContext>) {
     }
 }
 
+pub fn delete_local_ctx() {
+    unsafe {
+        CONTEXT = None;
+    }
+}
+
 pub unsafe extern "C" fn audio_sample_callback(left: i16, right: i16) {
     if let Some(ctx) = &CONTEXT {
         (ctx.callbacks.audio_sample_callback)(left, right)
