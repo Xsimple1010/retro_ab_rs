@@ -50,6 +50,7 @@ pub struct Video {
 
 pub struct CoreWrapper {
     pub initialized: Mutex<bool>,
+    pub game_loaded: Mutex<bool>,
     pub video: Video,
     pub supports_bitmasks: Mutex<bool>,
     pub support_no_game: Mutex<bool>,
@@ -64,6 +65,7 @@ impl CoreWrapper {
         CoreWrapper {
             raw: Arc::new(raw),
             initialized: Mutex::new(false),
+            game_loaded: Mutex::new(false),
             support_no_game: Mutex::new(false),
             use_subsystem: Mutex::new(false),
             language: Mutex::new(retro_language::RETRO_LANGUAGE_PORTUGUESE_BRAZIL),
@@ -84,13 +86,16 @@ impl CoreWrapper {
 
 pub fn run(ctx: &Arc<RetroContext>) {
     unsafe {
-        ctx.core.raw.retro_run();
+        if *ctx.core.game_loaded.lock().unwrap() && *ctx.core.initialized.lock().unwrap() {
+            ctx.core.raw.retro_run();
+        }
     }
 }
 
 pub fn de_init(ctx: Arc<RetroContext>) {
     unsafe {
         ctx.core.raw.retro_deinit();
+        *ctx.core.initialized.lock().unwrap() = false;
         environment::delete_local_ctx();
         retro_context::delete(ctx);
     }
@@ -102,13 +107,18 @@ pub fn version(ctx: &Arc<RetroContext>) -> u32 {
 
 pub fn init(ctx: &Arc<RetroContext>) {
     unsafe {
+        *ctx.core.initialized.lock().unwrap() = true;
         ctx.core.raw.retro_init();
     }
 }
 
 pub fn load_game(ctx: &Arc<RetroContext>, path: &str) {
-    tools::game_tools::load(&ctx.core.raw, path);
+    if !*ctx.core.game_loaded.lock().unwrap() && *ctx.core.initialized.lock().unwrap() {
+        tools::game_tools::load(&ctx.core.raw, path);
+    }
 }
+
+pub fn unload_game() {}
 
 pub fn load(path: &str, callbacks: CoreCallbacks) -> Result<Arc<RetroContext>, String> {
     unsafe {
@@ -157,3 +167,5 @@ pub fn load(path: &str, callbacks: CoreCallbacks) -> Result<Arc<RetroContext>, S
         }
     }
 }
+
+//TODO: adicionar testes aqui

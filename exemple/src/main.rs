@@ -48,6 +48,18 @@ fn main() {
         _ => {}
     }
 
+    match value.get_key_value("rom") {
+        Some((_, value)) => match &context {
+            Some(ctx) => {
+                // core::init(&ctx);
+                // core::load_game(ctx, value);
+                // core::run(&ctx);
+            }
+            _ => {}
+        },
+        _ => {}
+    }
+
     match context {
         Some(ctx) => {
             println!("=======core context=======");
@@ -59,29 +71,46 @@ fn main() {
             );
             println!("language -> {:?}", *ctx.core.language.lock().unwrap());
 
-            // println!("options version -> {:?}", *ctx.options.version.lock().unwrap());
-
+            println!("\n+++++sys info here+++++");
             println!(
-                "sys -> {:?}",
+                "library_name -> {:?}",
                 ctx.core.sys_info.library_name.lock().unwrap()
             );
             println!(
-                "sys -> {:?}",
+                "library_version -> {:?}",
                 ctx.core.sys_info.library_version.lock().unwrap()
             );
             println!(
-                "sys -> {:?}",
+                "valid_extensions -> {:?}",
                 ctx.core.sys_info.valid_extensions.lock().unwrap()
             );
-            println!("sys -> {:?}", ctx.options.file_path.lock().unwrap());
-            println!("options here\n");
+            println!(
+                "need_fullpath -> {:?}",
+                ctx.core.sys_info.need_fullpath.lock().unwrap()
+            );
+            println!(
+                "block_extract -> {:?}",
+                ctx.core.sys_info.block_extract.lock().unwrap()
+            );
+
+            println!("\n+++++options here+++++");
+            println!(
+                "file path -> {:?} \n",
+                ctx.options.file_path.lock().unwrap()
+            );
             for opt in &*ctx.options.opts.lock().unwrap() {
-                println!("{:?}", opt.key);
-                println!("{:?}", opt.visibility);
-                println!("{:?}", opt.desc_categorized);
-                println!("{:?}", opt.info);
-                println!("{:?}", opt.info_categorized);
-                println!("{:?}", opt.default_value);
+                println!("key -> {:?}", opt.key.lock().unwrap());
+                println!("visibility -> {:?}", opt.visibility.lock().unwrap());
+                println!(
+                    "desc_categorized -> {:?}",
+                    opt.desc_categorized.lock().unwrap()
+                );
+                println!("info -> {:?}", opt.info.lock().unwrap());
+                println!(
+                    "info_categorized -> {:?}",
+                    opt.info_categorized.lock().unwrap()
+                );
+                println!("default_value -> {:?}", opt.default_value.lock().unwrap());
                 println!("");
             }
             core::de_init(ctx);
