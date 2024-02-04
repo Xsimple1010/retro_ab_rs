@@ -46,7 +46,7 @@ pub fn delete(ctx_to_delete: Arc<RetroContext>) {
     unsafe {
         let position = CONTEXTS.partition_point(|ctx| ctx.id == ctx_to_delete.id);
 
-        if CONTEXTS.len() > 0 {
+        if !CONTEXTS.is_empty() {
             CONTEXTS.remove(position - 1);
         }
     };
