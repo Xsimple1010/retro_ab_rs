@@ -7,6 +7,8 @@ use crate::{
     tools::mutex_tools::get_string_mutex_from_ptr,
 };
 use std::{
+    fs::File,
+    io::{Read, Write},
     os::raw::c_void,
     path::PathBuf,
     sync::{Arc, Mutex},
@@ -30,6 +32,7 @@ pub enum OptionVersion {
 pub struct Options {
     pub key: Mutex<String>,
     pub visibility: Mutex<bool>,
+    pub selected: Mutex<String>,
     pub desc: Mutex<String>,
     pub desc_categorized: Mutex<String>,
     pub info: Mutex<String>,
@@ -69,12 +72,12 @@ impl OptionManager {
     }
 }
 
-pub fn _update(ctx: Arc<RetroContext>, key: &str, value: &str) {
+pub fn update(ctx: Arc<RetroContext>, key: &str, value: &str) {
     match *ctx.options.version.lock().unwrap() {
         OptionVersion::Legacy => {}
         OptionVersion::V1Intl => {}
         OptionVersion::V1 => {}
-        OptionVersion::V2Intl => _update_value_v2_intl(Arc::clone(&ctx), key, value),
+        OptionVersion::V2Intl => update_value_v2_intl(Arc::clone(&ctx), key, value),
         OptionVersion::V2 => {}
     }
 }
@@ -87,12 +90,77 @@ pub fn change_visibility(ctx: Arc<RetroContext>, key: String, visibility: bool) 
     }
 }
 
+fn write_all_options_in_file(ctx: Arc<RetroContext>) {
+    let file_path = ctx.options.file_path.lock().unwrap().clone();
+    let mut file = File::create(file_path.clone()).unwrap();
+
+    for opt in &*ctx.options.opts.lock().unwrap() {
+        let key = opt.key.lock().unwrap().clone();
+        let selected = opt.selected.lock().unwrap().clone();
+
+        let buf = key + "=" + &selected + "\n";
+
+        let _ = file.write(buf.as_bytes());
+    }
+}
+
+fn load_all_option_in_file(ctx: Arc<RetroContext>) {
+    let file_path = ctx.options.file_path.lock().unwrap().clone();
+
+    let mut file = File::open(file_path).unwrap();
+
+    let mut buf = String::new();
+    file.read_to_string(&mut buf).unwrap();
+
+    let lines: Vec<&str> = buf.split('\n').collect();
+
+    for line in &lines {
+        if line.is_empty() {
+            return;
+        }
+
+        let values: Vec<&str> = line.split('=').collect();
+
+        let key = values.first().unwrap();
+        let value = values.get(1).unwrap();
+
+        for opt in &*ctx.options.opts.lock().unwrap() {
+            if opt.key.lock().unwrap().eq(key) {
+                *opt.key.lock().unwrap() = key.to_string();
+                *opt.selected.lock().unwrap() = value.to_string();
+            }
+        }
+    }
+}
+
+//TODO: adiciona um meio do usuário saber se ocorrer um erro ao tentar salva ou ler o arquivo
+pub fn try_reload_pref_option(ctx: &Arc<RetroContext>) {
+    let file_path = ctx.options.file_path.lock().unwrap().clone();
+
+    //se o arquivo ainda nao existe apenas
+    //crie um novo arquivo e salve a configuração padrão do núcleo
+    if !file_path.exists() {
+        write_all_options_in_file(Arc::clone(ctx));
+    } else {
+        load_all_option_in_file(Arc::clone(ctx))
+    }
+}
+
 //===============================================
 //=================v2_intl=======================
 //===============================================
-fn _update_value_v2_intl(ctx: Arc<RetroContext>, _key: &str, _value: &str) {
-    let _origin_options =
-        unsafe { *(*ctx.options._origin_ptr.lock().unwrap() as *mut retro_core_options_v2_intl) };
+fn update_value_v2_intl(ctx: Arc<RetroContext>, key: &str, value: &str) {
+    // let _origin_options =
+    // unsafe { *(*ctx.options._origin_ptr.lock().unwrap() as *mut retro_core_options_v2_intl) };
+
+    for opt in &*ctx.options.opts.lock().unwrap() {
+        if opt.key.lock().unwrap().eq(key) {
+            *opt.key.lock().unwrap() = key.to_string();
+            *opt.selected.lock().unwrap() = value.to_string();
+        }
+    }
+
+    write_all_options_in_file(Arc::clone(&ctx));
 }
 
 fn get_v2_intl_category(categories: *mut retro_core_option_v2_category, ctx: &Arc<RetroContext>) {
@@ -124,6 +192,7 @@ fn get_v2_intl_definitions(
     for definition in definitions {
         if !definition.key.is_null() {
             let key = get_string_mutex_from_ptr(definition.key);
+            let selected = get_string_mutex_from_ptr(definition.default_value);
             let default_value = get_string_mutex_from_ptr(definition.default_value);
             let info = get_string_mutex_from_ptr(definition.info);
             let desc = get_string_mutex_from_ptr(definition.desc);
@@ -144,6 +213,7 @@ fn get_v2_intl_definitions(
             ctx.options.opts.lock().unwrap().push(Options {
                 key,
                 visibility: Mutex::new(true),
+                selected,
                 default_value,
                 info,
                 desc,
@@ -161,7 +231,7 @@ fn get_v2_intl_definitions(
 pub fn convert_option_v2_intl(
     option_intl_v2: retro_core_options_v2_intl,
     origin_data: *mut c_void,
-    ctx: Arc<RetroContext>,
+    ctx: &Arc<RetroContext>,
 ) {
     *ctx.options.version.lock().unwrap() = OptionVersion::V2Intl;
     *ctx.options._origin_ptr.lock().unwrap() = origin_data;
@@ -169,11 +239,11 @@ pub fn convert_option_v2_intl(
     unsafe {
         if option_intl_v2.local.is_null() {
             let us: retro_core_options_v2 = *(option_intl_v2.us);
-            get_v2_intl_definitions(us.definitions, &ctx);
-            get_v2_intl_category(us.categories, &ctx);
+            get_v2_intl_definitions(us.definitions, ctx);
+            get_v2_intl_category(us.categories, ctx);
         } else {
             let local: retro_core_options_v2 = *(option_intl_v2.local);
-            get_v2_intl_definitions(local.definitions, &ctx);
+            get_v2_intl_definitions(local.definitions, ctx);
         }
     }
 }
