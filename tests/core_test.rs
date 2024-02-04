@@ -3,8 +3,8 @@ use retro_ab::*;
 mod common;
 
 #[test]
-fn context() {
-    let ctx = common::setup();
+fn core_implement_tests() {
+    let ctx = common::core::setup();
 
     match &ctx {
         Ok(ctx) => {
@@ -16,10 +16,12 @@ fn context() {
             assert_eq!(
                 *ctx.core.video.pixel_format.lock().unwrap(),
                 retro_pixel_format::RETRO_PIXEL_FORMAT_UNKNOWN
-            )
+            );
+
+            core::de_init(ctx.clone());
         }
-        _ => {}
+        _ => panic!("O contexto não foi criado"),
     }
 
-    println!("{:?}", get_num_context());
+    // println!("{:?}", get_num_context());
 }
