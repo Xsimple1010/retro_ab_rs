@@ -49,8 +49,8 @@ fn main() {
     }
 
     match value.get_key_value("rom") {
-        Some((_, value)) => match &context {
-            Some(ctx) => {
+        Some((_, _value)) => match &context {
+            Some(_ctx) => {
                 // core::init(&ctx);
                 // core::load_game(ctx, value);
                 // core::run(&ctx);
@@ -111,6 +111,16 @@ fn main() {
                     opt.info_categorized.lock().unwrap()
                 );
                 println!("default_value -> {:?}", opt.default_value.lock().unwrap());
+                println!("");
+            }
+
+            println!("\n+++++categories here+++++");
+            for category in &*ctx.options.categories.lock().unwrap() {
+                println!("key -> {:?}", category.key.lock().unwrap());
+
+                println!("info -> {:?}", category.info.lock().unwrap());
+
+                println!("desc -> {:?}", category.desc.lock().unwrap());
                 println!("");
             }
             core::de_init(ctx);

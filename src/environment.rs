@@ -105,7 +105,7 @@ pub unsafe extern "C" fn core_environment(
                 Some(ctx) => {
                     let options_v2 = *(_data as *mut retro_core_options_v2_intl);
 
-                    option_manager::convert_option_v2_intl(options_v2, Arc::clone(ctx));
+                    option_manager::convert_option_v2_intl(options_v2, _data, Arc::clone(ctx));
                 }
                 _ => return false,
             }
