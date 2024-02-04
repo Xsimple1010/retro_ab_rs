@@ -1,6 +1,6 @@
-use super::environment;
 use crate::{
     binding_libretro::{retro_language, retro_pixel_format, LibretroRaw},
+    environment,
     retro_context::{self, get_num_context},
     tools,
 };
@@ -8,6 +8,8 @@ use std::sync::{Arc, Mutex};
 
 pub use crate::retro_context::RetroContext;
 
+//TODO: implementar a trait Copy
+//isso vale para todas as struct aqui!
 pub struct SysInfo {
     pub library_name: Mutex<String>,
     pub library_version: Mutex<String>,
@@ -89,6 +91,8 @@ pub fn run(ctx: &Arc<RetroContext>) {
 pub fn de_init(ctx: Arc<RetroContext>) {
     unsafe {
         ctx.core.raw.retro_deinit();
+        environment::delete_local_ctx();
+        retro_context::delete(ctx);
     }
 }
 
@@ -106,7 +110,7 @@ pub fn load_game(ctx: &Arc<RetroContext>, path: &str) {
     tools::game_tools::load(&ctx.core.raw, path);
 }
 
-pub fn load(path: &String, callbacks: CoreCallbacks) -> Result<Arc<RetroContext>, String> {
+pub fn load(path: &str, callbacks: CoreCallbacks) -> Result<Arc<RetroContext>, String> {
     unsafe {
         let result = LibretroRaw::new(path);
 
@@ -121,18 +125,23 @@ pub fn load(path: &String, callbacks: CoreCallbacks) -> Result<Arc<RetroContext>
                         ctx.core
                             .raw
                             .retro_set_environment(Some(environment::core_environment));
+
                         ctx.core
                             .raw
                             .retro_set_audio_sample(Some(environment::audio_sample_callback));
+
                         ctx.core.raw.retro_set_audio_sample_batch(Some(
                             environment::audio_sample_batch_callback,
                         ));
+
                         ctx.core
                             .raw
                             .retro_set_video_refresh(Some(environment::video_refresh_callback));
+
                         ctx.core
                             .raw
                             .retro_set_input_poll(Some(environment::input_poll_callback));
+
                         ctx.core
                             .raw
                             .retro_set_input_state(Some(environment::input_state_callback));
