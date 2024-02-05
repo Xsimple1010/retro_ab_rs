@@ -123,6 +123,19 @@ fn main() {
                 println!("desc -> {:?}", category.desc.lock().unwrap());
                 println!("");
             }
+
+            println!("\n+++++controller info+++++");
+            for ctr_info in &*ctx.core.controller_info.lock().unwrap() {
+                println!("num_types -> {:?}", ctr_info.num_types.lock().unwrap());
+
+                for desc in &ctr_info.types {
+                    println!("id -> {:?}", desc.id.lock().unwrap());
+                    println!("desc -> {:?}", desc.desc.lock().unwrap());
+                }
+
+                println!("")
+            }
+
             core::de_init(ctx);
         }
         None => {}

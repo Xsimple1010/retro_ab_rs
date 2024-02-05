@@ -1,5 +1,6 @@
 use crate::{
     binding_libretro::{retro_language, retro_pixel_format, LibretroRaw},
+    controller_info::ControllerInfo,
     environment,
     retro_context::{self, get_num_context},
     tools,
@@ -10,6 +11,8 @@ pub use crate::retro_context::RetroContext;
 
 //TODO: implementar a trait Copy
 //isso vale para todas as struct aqui!
+
+#[derive(Default)]
 pub struct SysInfo {
     pub library_name: Mutex<String>,
     pub library_version: Mutex<String>,
@@ -18,17 +21,6 @@ pub struct SysInfo {
     pub block_extract: Mutex<bool>,
 }
 
-impl SysInfo {
-    fn new() -> SysInfo {
-        SysInfo {
-            library_name: Mutex::new("".to_owned()),
-            library_version: Mutex::new("".to_owned()),
-            valid_extensions: Mutex::new("".to_owned()),
-            block_extract: Mutex::new(false),
-            need_fullpath: Mutex::new(false),
-        }
-    }
-}
 pub struct CoreCallbacks {
     pub video_refresh_callback:
         fn(data: *const ::std::os::raw::c_void, width: i32, height: i32, pitch: usize),
@@ -51,11 +43,12 @@ pub struct Video {
 pub struct CoreWrapper {
     pub initialized: Mutex<bool>,
     pub game_loaded: Mutex<bool>,
-    pub video: Video,
     pub supports_bitmasks: Mutex<bool>,
     pub support_no_game: Mutex<bool>,
     pub use_subsystem: Mutex<bool>,
     pub language: Mutex<retro_language>,
+    pub controller_info: Mutex<Vec<ControllerInfo>>,
+    pub video: Video,
     pub sys_info: SysInfo,
     raw: Arc<LibretroRaw>,
 }
@@ -70,7 +63,8 @@ impl CoreWrapper {
             use_subsystem: Mutex::new(false),
             language: Mutex::new(retro_language::RETRO_LANGUAGE_PORTUGUESE_BRAZIL),
             supports_bitmasks: Mutex::new(false),
-            sys_info: SysInfo::new(),
+            sys_info: SysInfo::default(),
+            controller_info: Mutex::new(Vec::new()),
             video: Video {
                 can_dupe: false,
                 frame_delta: Some(0),

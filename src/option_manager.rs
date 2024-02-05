@@ -3,16 +3,17 @@ use crate::{
         retro_core_option_v2_category, retro_core_option_v2_definition, retro_core_options_v2,
         retro_core_options_v2_intl,
     },
+    constants,
     retro_context::RetroContext,
     tools::mutex_tools::get_string_mutex_from_ptr,
 };
 use std::{
     fs::File,
     io::{Read, Write},
-    os::raw::c_void,
     path::PathBuf,
     sync::{Arc, Mutex},
 };
+
 pub struct Values {
     pub value: Mutex<String>,
     pub label: Mutex<String>,
@@ -54,20 +55,20 @@ pub struct OptionManager {
     pub file_path: Mutex<PathBuf>,
     pub categories: Mutex<Vec<Categories>>,
     pub opts: Mutex<Vec<Options>>,
-    _origin_ptr: Mutex<*mut c_void>,
+    // _origin_ptr: Mutex<*mut c_void>,
 }
 
 impl OptionManager {
     pub fn new(file_path: PathBuf) -> OptionManager {
-        let expect_value = "".to_owned();
-        let origin_ptr = &expect_value as *const String as *mut c_void;
+        // let expect_value = "".to_owned();
+        // let origin_ptr = &expect_value as *const String as *mut c_void;
 
         OptionManager {
             version: Mutex::new(OptionVersion::V2),
             categories: Mutex::new(Vec::new()),
             file_path: Mutex::new(file_path),
             opts: Mutex::new(Vec::new()),
-            _origin_ptr: Mutex::new(origin_ptr),
+            // _origin_ptr: Mutex::new(origin_ptr),
         }
     }
 }
@@ -164,7 +165,9 @@ fn update_value_v2_intl(ctx: Arc<RetroContext>, key: &str, value: &str) {
 }
 
 fn get_v2_intl_category(categories: *mut retro_core_option_v2_category, ctx: &Arc<RetroContext>) {
-    let categories = unsafe { *(categories as *mut [retro_core_option_v2_category; 90]) };
+    let categories = unsafe {
+        *(categories as *mut [retro_core_option_v2_category; constants::MAX_CORE_OPTIONS])
+    };
 
     for category in categories {
         if !category.key.is_null() {
@@ -230,11 +233,11 @@ fn get_v2_intl_definitions(
 
 pub fn convert_option_v2_intl(
     option_intl_v2: retro_core_options_v2_intl,
-    origin_data: *mut c_void,
+    // origin_data: *mut c_void,
     ctx: &Arc<RetroContext>,
 ) {
     *ctx.options.version.lock().unwrap() = OptionVersion::V2Intl;
-    *ctx.options._origin_ptr.lock().unwrap() = origin_data;
+    // *ctx.options._origin_ptr.lock().unwrap() = origin_data;
 
     unsafe {
         if option_intl_v2.local.is_null() {
@@ -244,6 +247,7 @@ pub fn convert_option_v2_intl(
         } else {
             let local: retro_core_options_v2 = *(option_intl_v2.local);
             get_v2_intl_definitions(local.definitions, ctx);
+            get_v2_intl_category(local.categories, ctx);
         }
     }
 }

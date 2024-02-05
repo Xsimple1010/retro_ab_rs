@@ -1,4 +1,6 @@
 mod binding_libretro;
+mod constants;
+mod controller_info;
 mod environment;
 mod option_manager;
 mod retro_context;

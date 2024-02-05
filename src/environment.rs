@@ -1,16 +1,17 @@
 use crate::{
     binding_libretro::{
-        retro_core_option_display, retro_core_options_v2_intl, retro_language, retro_pixel_format,
-        RETRO_ENVIRONMENT_GET_CORE_OPTIONS_VERSION, RETRO_ENVIRONMENT_GET_LANGUAGE,
-        RETRO_ENVIRONMENT_GET_LOG_INTERFACE, RETRO_ENVIRONMENT_GET_VARIABLE,
-        RETRO_ENVIRONMENT_SET_CONTROLLER_INFO, RETRO_ENVIRONMENT_SET_CORE_OPTIONS_DISPLAY,
+        retro_controller_info, retro_core_option_display, retro_core_options_v2_intl,
+        retro_language, retro_pixel_format, RETRO_ENVIRONMENT_GET_CORE_OPTIONS_VERSION,
+        RETRO_ENVIRONMENT_GET_LANGUAGE, RETRO_ENVIRONMENT_GET_LOG_INTERFACE,
+        RETRO_ENVIRONMENT_GET_VARIABLE, RETRO_ENVIRONMENT_SET_CONTROLLER_INFO,
+        RETRO_ENVIRONMENT_SET_CORE_OPTIONS_DISPLAY,
         RETRO_ENVIRONMENT_SET_CORE_OPTIONS_UPDATE_DISPLAY_CALLBACK,
         RETRO_ENVIRONMENT_SET_CORE_OPTIONS_V2_INTL, RETRO_ENVIRONMENT_SET_GEOMETRY,
         RETRO_ENVIRONMENT_SET_INPUT_DESCRIPTORS, RETRO_ENVIRONMENT_SET_PIXEL_FORMAT,
         RETRO_ENVIRONMENT_SET_SUBSYSTEM_INFO, RETRO_ENVIRONMENT_SET_SUPPORT_NO_GAME,
         RETRO_ENVIRONMENT_SET_VARIABLES,
     },
-    option_manager,
+    constants, controller_info, option_manager,
     retro_context::RetroContext,
     tools,
 };
@@ -105,7 +106,7 @@ pub unsafe extern "C" fn core_environment(
                 Some(ctx) => {
                     let option_intl_v2 = *(_data as *mut retro_core_options_v2_intl);
 
-                    option_manager::convert_option_v2_intl(option_intl_v2, _data, ctx);
+                    option_manager::convert_option_v2_intl(option_intl_v2, ctx);
                     option_manager::try_reload_pref_option(ctx);
                 }
                 _ => return false,
@@ -131,7 +132,6 @@ pub unsafe extern "C" fn core_environment(
 
             return true;
         }
-
         RETRO_ENVIRONMENT_GET_LANGUAGE => {
             println!("RETRO_ENVIRONMENT_GET_LANGUAGE -> ok");
             *(_data as *mut retro_language) = retro_language::RETRO_LANGUAGE_ENGLISH;
@@ -183,14 +183,38 @@ pub unsafe extern "C" fn core_environment(
             return true;
         }
         RETRO_ENVIRONMENT_SET_CONTROLLER_INFO => {
-            println!("RETRO_ENVIRONMENT_SET_CONTROLLER_INFO");
+            println!("RETRO_ENVIRONMENT_SET_CONTROLLER_INFO -> ok");
+
+            match &CONTEXT {
+                Some(ctx) => {
+                    let raw_ctr_infos = *(_data
+                        as *mut [retro_controller_info; constants::MAX_CORE_CONTROLLER_INFO_TYPES]);
+
+                    ctx.core.controller_info.lock().unwrap().clear();
+
+                    for raw_ctr_info in raw_ctr_infos {
+                        if raw_ctr_info.num_types != 0 {
+                            let controller_info =
+                                controller_info::get_controller_info(raw_ctr_info);
+
+                            ctx.core
+                                .controller_info
+                                .lock()
+                                .unwrap()
+                                .push(controller_info);
+                        } else {
+                            break;
+                        }
+                    }
+                }
+                _ => return false,
+            }
 
             return true;
         }
         RETRO_ENVIRONMENT_SET_CORE_OPTIONS_UPDATE_DISPLAY_CALLBACK => {
             println!("RETRO_ENVIRONMENT_SET_CORE_OPTIONS_UPDATE_DISPLAY_CALLBACK");
         }
-
         _ => {
             println!("{:?}", cmd);
 
