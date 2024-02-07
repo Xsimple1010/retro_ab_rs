@@ -4,6 +4,7 @@ mod controller_info;
 mod environment;
 mod option_manager;
 mod retro_context;
+mod system;
 mod tools;
 
 pub mod args_manager;

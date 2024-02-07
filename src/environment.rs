@@ -1,19 +1,20 @@
 use crate::{
     binding_libretro::{
         retro_controller_info, retro_core_option_display, retro_core_options_v2_intl,
-        retro_language, retro_pixel_format, RETRO_ENVIRONMENT_GET_CORE_OPTIONS_VERSION,
-        RETRO_ENVIRONMENT_GET_LANGUAGE, RETRO_ENVIRONMENT_GET_LOG_INTERFACE,
-        RETRO_ENVIRONMENT_GET_VARIABLE, RETRO_ENVIRONMENT_SET_CONTROLLER_INFO,
-        RETRO_ENVIRONMENT_SET_CORE_OPTIONS_DISPLAY,
+        retro_language, retro_pixel_format, retro_subsystem_info,
+        RETRO_ENVIRONMENT_GET_CORE_OPTIONS_VERSION, RETRO_ENVIRONMENT_GET_LANGUAGE,
+        RETRO_ENVIRONMENT_GET_LOG_INTERFACE, RETRO_ENVIRONMENT_GET_VARIABLE,
+        RETRO_ENVIRONMENT_SET_CONTROLLER_INFO, RETRO_ENVIRONMENT_SET_CORE_OPTIONS_DISPLAY,
         RETRO_ENVIRONMENT_SET_CORE_OPTIONS_UPDATE_DISPLAY_CALLBACK,
         RETRO_ENVIRONMENT_SET_CORE_OPTIONS_V2_INTL, RETRO_ENVIRONMENT_SET_GEOMETRY,
         RETRO_ENVIRONMENT_SET_INPUT_DESCRIPTORS, RETRO_ENVIRONMENT_SET_PIXEL_FORMAT,
         RETRO_ENVIRONMENT_SET_SUBSYSTEM_INFO, RETRO_ENVIRONMENT_SET_SUPPORT_NO_GAME,
         RETRO_ENVIRONMENT_SET_VARIABLES,
     },
-    constants, controller_info, option_manager,
+    constants::{self, MAX_CORE_SUBSYSTEM_INFO},
+    controller_info, option_manager,
     retro_context::RetroContext,
-    tools,
+    system, tools,
 };
 use ::std::os::raw;
 use std::sync::Arc;
@@ -132,6 +133,9 @@ pub unsafe extern "C" fn core_environment(
 
             return true;
         }
+        RETRO_ENVIRONMENT_SET_CORE_OPTIONS_UPDATE_DISPLAY_CALLBACK => {
+            println!("RETRO_ENVIRONMENT_SET_CORE_OPTIONS_UPDATE_DISPLAY_CALLBACK");
+        }
         RETRO_ENVIRONMENT_GET_LANGUAGE => {
             println!("RETRO_ENVIRONMENT_GET_LANGUAGE -> ok");
             *(_data as *mut retro_language) = retro_language::RETRO_LANGUAGE_ENGLISH;
@@ -171,11 +175,14 @@ pub unsafe extern "C" fn core_environment(
             println!("RETRO_ENVIRONMENT_GET_LOG_INTERFACE");
         }
         RETRO_ENVIRONMENT_SET_SUBSYSTEM_INFO => {
-            println!("RETRO_ENVIRONMENT_SET_SUBSYSTEM_INFO");
+            println!("RETRO_ENVIRONMENT_SET_SUBSYSTEM_INFO -> OK");
 
             match &CONTEXT {
                 Some(ctx) => {
-                    *ctx.core.use_subsystem.lock().unwrap() = true;
+                    let raw_subsystem =
+                        *(_data as *mut [retro_subsystem_info; MAX_CORE_SUBSYSTEM_INFO]);
+
+                    system::get_subsystem(ctx, raw_subsystem);
                 }
                 None => return false,
             }
@@ -190,18 +197,14 @@ pub unsafe extern "C" fn core_environment(
                     let raw_ctr_infos = *(_data
                         as *mut [retro_controller_info; constants::MAX_CORE_CONTROLLER_INFO_TYPES]);
 
-                    ctx.core.controller_info.lock().unwrap().clear();
+                    ctx.core.system.ports.lock().unwrap().clear();
 
                     for raw_ctr_info in raw_ctr_infos {
                         if raw_ctr_info.num_types != 0 {
                             let controller_info =
                                 controller_info::get_controller_info(raw_ctr_info);
 
-                            ctx.core
-                                .controller_info
-                                .lock()
-                                .unwrap()
-                                .push(controller_info);
+                            ctx.core.system.ports.lock().unwrap().push(controller_info);
                         } else {
                             break;
                         }
@@ -211,9 +214,6 @@ pub unsafe extern "C" fn core_environment(
             }
 
             return true;
-        }
-        RETRO_ENVIRONMENT_SET_CORE_OPTIONS_UPDATE_DISPLAY_CALLBACK => {
-            println!("RETRO_ENVIRONMENT_SET_CORE_OPTIONS_UPDATE_DISPLAY_CALLBACK");
         }
         _ => {
             println!("{:?}", cmd);

@@ -1,8 +1,7 @@
 use crate::{
     binding_libretro::{retro_language, retro_pixel_format, LibretroRaw},
-    controller_info::ControllerInfo,
-    environment,
-    retro_context::{self, get_num_context},
+    environment, retro_context,
+    system::System,
     tools,
 };
 use std::sync::{Arc, Mutex};
@@ -11,15 +10,6 @@ pub use crate::retro_context::RetroContext;
 
 //TODO: implementar a trait Copy
 //isso vale para todas as struct aqui!
-
-#[derive(Default)]
-pub struct SysInfo {
-    pub library_name: Mutex<String>,
-    pub library_version: Mutex<String>,
-    pub valid_extensions: Mutex<String>,
-    pub need_fullpath: Mutex<bool>,
-    pub block_extract: Mutex<bool>,
-}
 
 pub struct CoreCallbacks {
     pub video_refresh_callback:
@@ -45,11 +35,10 @@ pub struct CoreWrapper {
     pub game_loaded: Mutex<bool>,
     pub supports_bitmasks: Mutex<bool>,
     pub support_no_game: Mutex<bool>,
-    pub use_subsystem: Mutex<bool>,
     pub language: Mutex<retro_language>,
-    pub controller_info: Mutex<Vec<ControllerInfo>>,
+    // pub controller_info: Mutex<Vec<ControllerInfo>>,
     pub video: Video,
-    pub sys_info: SysInfo,
+    pub system: System,
     raw: Arc<LibretroRaw>,
 }
 
@@ -60,11 +49,10 @@ impl CoreWrapper {
             initialized: Mutex::new(false),
             game_loaded: Mutex::new(false),
             support_no_game: Mutex::new(false),
-            use_subsystem: Mutex::new(false),
             language: Mutex::new(retro_language::RETRO_LANGUAGE_PORTUGUESE_BRAZIL),
             supports_bitmasks: Mutex::new(false),
-            sys_info: SysInfo::default(),
-            controller_info: Mutex::new(Vec::new()),
+            system: System::default(),
+            // controller_info: Mutex::new(Vec::new()),
             video: Video {
                 can_dupe: false,
                 frame_delta: Some(0),
@@ -149,8 +137,6 @@ pub fn load(path: &str, callbacks: CoreCallbacks) -> Result<Arc<RetroContext>, S
                         ctx.core
                             .raw
                             .retro_set_input_state(Some(environment::input_state_callback));
-
-                        println!("ctxS len {:?}", get_num_context());
 
                         Ok(Arc::clone(ctx))
                     }

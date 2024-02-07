@@ -64,7 +64,7 @@ fn main() {
         Some(ctx) => {
             println!("=======core context=======");
             println!("core version -> {:?}", core::version(&ctx));
-            println!("subsystem -> {:?}", *ctx.core.use_subsystem.lock().unwrap());
+            // println!("subsystem -> {:?}", *ctx.core.use_subsystem.lock().unwrap());
             println!(
                 "pixel format -> {:?}",
                 *ctx.core.video.pixel_format.lock().unwrap()
@@ -74,23 +74,23 @@ fn main() {
             println!("\n+++++sys info here+++++");
             println!(
                 "library_name -> {:?}",
-                ctx.core.sys_info.library_name.lock().unwrap()
+                ctx.core.system.info.library_name.lock().unwrap()
             );
             println!(
                 "library_version -> {:?}",
-                ctx.core.sys_info.library_version.lock().unwrap()
+                ctx.core.system.info.library_version.lock().unwrap()
             );
             println!(
                 "valid_extensions -> {:?}",
-                ctx.core.sys_info.valid_extensions.lock().unwrap()
+                ctx.core.system.info.valid_extensions.lock().unwrap()
             );
             println!(
                 "need_fullpath -> {:?}",
-                ctx.core.sys_info.need_fullpath.lock().unwrap()
+                ctx.core.system.info.need_fullpath.lock().unwrap()
             );
             println!(
                 "block_extract -> {:?}",
-                ctx.core.sys_info.block_extract.lock().unwrap()
+                ctx.core.system.info.block_extract.lock().unwrap()
             );
 
             println!("\n+++++options here+++++");
@@ -125,12 +125,36 @@ fn main() {
             }
 
             println!("\n+++++controller info+++++");
-            for ctr_info in &*ctx.core.controller_info.lock().unwrap() {
+            for ctr_info in &*ctx.core.system.ports.lock().unwrap() {
                 println!("num_types -> {:?}", ctr_info.num_types.lock().unwrap());
 
                 for desc in &ctr_info.types {
                     println!("id -> {:?}", desc.id.lock().unwrap());
                     println!("desc -> {:?}", desc.desc.lock().unwrap());
+                }
+
+                println!("")
+            }
+
+            println!("\n+++++system+++++");
+            for subsystem in &*ctx.core.system.subsystem.lock().unwrap() {
+                println!("id -> {:?}", subsystem.id.lock().unwrap());
+                println!("ident -> {:?}", subsystem.ident.lock().unwrap());
+                println!("desc -> {:?}", subsystem.desc.lock().unwrap());
+
+                for rom in &*subsystem.roms.lock().unwrap() {
+                    println!("rom: desc -> {:?}", rom.desc.lock().unwrap());
+                    println!(
+                        "rom: valide extensions -> {:?}",
+                        rom.valid_extensions.lock().unwrap()
+                    );
+
+                    println!(
+                        "memory: extensions -> {:?}",
+                        rom.memory.extension.lock().unwrap()
+                    );
+
+                    println!("memory: type -> {:?}", rom.memory.type_.lock().unwrap());
                 }
 
                 println!("")
