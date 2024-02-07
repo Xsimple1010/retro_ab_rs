@@ -8,6 +8,7 @@ mod system;
 mod tools;
 
 pub mod core;
+pub use environment::RetroEnvCallbacks;
 pub mod test_tools;
 pub use binding_libretro::retro_language;
 pub use binding_libretro::retro_pixel_format;

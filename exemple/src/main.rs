@@ -28,7 +28,7 @@ fn main() {
 
     let mut context: Option<Arc<core::RetroContext>> = None;
 
-    let callbacks = core::CoreCallbacks {
+    let callbacks = retro_ab::RetroEnvCallbacks {
         audio_sample_batch_callback,
         audio_sample_callback,
         input_poll_callback,
@@ -50,8 +50,8 @@ fn main() {
 
     match value.get_key_value("rom") {
         Some((_, _value)) => match &context {
-            Some(_ctx) => {
-                // core::init(&ctx);
+            Some(ctx) => {
+                core::init(&ctx);
                 // core::load_game(ctx, value);
                 // core::run(&ctx);
             }

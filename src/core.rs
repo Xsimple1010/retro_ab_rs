@@ -1,26 +1,16 @@
 use crate::{
     binding_libretro::{retro_language, retro_pixel_format, LibretroRaw},
-    environment, retro_context,
+    environment::{self, RetroEnvCallbacks},
+    retro_context,
     system::System,
     tools,
 };
-use std::{
-    os::raw::c_void,
-    sync::{Arc, Mutex},
-};
+use std::sync::{Arc, Mutex};
 
 pub use crate::retro_context::RetroContext;
 
 //TODO: implementar a trait Copy
 //isso vale para todas as struct aqui!
-
-pub struct CoreCallbacks {
-    pub video_refresh_callback: fn(data: *const c_void, width: i32, height: i32, pitch: usize),
-    pub audio_sample_callback: fn(left: i16, right: i16),
-    pub audio_sample_batch_callback: fn(data: *const i16, frames: usize) -> usize,
-    pub input_poll_callback: fn(),
-    pub input_state_callback: fn(port: i16, device: i16, index: i16, id: i16) -> i16,
-}
 
 pub struct Video {
     pub can_dupe: bool,
@@ -104,7 +94,7 @@ pub fn load_game(ctx: &Arc<RetroContext>, path: &str) {
 
 pub fn unload_game() {}
 
-pub fn load(path: &str, callbacks: CoreCallbacks) -> Result<Arc<RetroContext>, String> {
+pub fn load(path: &str, callbacks: RetroEnvCallbacks) -> Result<Arc<RetroContext>, String> {
     unsafe {
         let result = LibretroRaw::new(path);
 

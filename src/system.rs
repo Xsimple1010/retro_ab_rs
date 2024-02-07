@@ -115,3 +115,39 @@ pub fn get_subsystem(
         }
     }
 }
+
+#[cfg(test)]
+mod test_system {
+    use crate::{system, test_tools};
+
+    #[test]
+    fn test_get_sys_info() {
+        let raw_result = test_tools::core::get_raw();
+
+        match raw_result {
+            Ok(raw) => {
+                let sys_info = system::get_sys_info(&raw);
+
+                assert_eq!(
+                    *sys_info.library_name.lock().unwrap().clone(),
+                    "Snes9x".to_owned()
+                );
+
+                assert_eq!(
+                    *sys_info.library_version.lock().unwrap().clone(),
+                    "1.62.3 46f8a6b".to_owned()
+                );
+
+                assert_eq!(
+                    *sys_info.valid_extensions.lock().unwrap().clone(),
+                    "smc|sfc|swc|fig|bs|st".to_owned()
+                );
+
+                assert_eq!(*sys_info.block_extract.lock().unwrap(), false);
+
+                assert_eq!(*sys_info.need_fullpath.lock().unwrap(), false);
+            }
+            _ => {}
+        }
+    }
+}

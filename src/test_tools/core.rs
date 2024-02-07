@@ -1,6 +1,6 @@
 use super::constants::CORE_TEST_RELATIVE_PATH;
 use crate::binding_libretro::LibretroRaw;
-use crate::core::CoreCallbacks;
+use crate::environment::RetroEnvCallbacks;
 
 fn audio_sample_callback(_left: i16, _right: i16) {}
 
@@ -24,8 +24,8 @@ fn video_refresh_callback(
 ) {
 }
 
-pub fn get_callbacks() -> CoreCallbacks {
-    CoreCallbacks {
+pub fn get_callbacks() -> RetroEnvCallbacks {
+    RetroEnvCallbacks {
         audio_sample_batch_callback,
         audio_sample_callback,
         input_poll_callback,

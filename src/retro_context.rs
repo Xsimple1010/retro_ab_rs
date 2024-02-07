@@ -1,17 +1,15 @@
 use std::{path::PathBuf, sync::Arc};
 
 use crate::{
-    binding_libretro::LibretroRaw,
-    core::{CoreCallbacks, CoreWrapper},
-    managers::option_manager::OptionManager,
-    system,
+    binding_libretro::LibretroRaw, core::CoreWrapper, environment::RetroEnvCallbacks,
+    managers::option_manager::OptionManager, system,
 };
 
 // #[derive(Debug, PartialEq, Eq)]
 pub struct RetroContext {
     pub id: String,
     pub core: CoreWrapper,
-    pub callbacks: CoreCallbacks,
+    pub callbacks: RetroEnvCallbacks,
     pub options: OptionManager,
 }
 
@@ -35,7 +33,7 @@ fn create_id() -> String {
     "".to_string()
 }
 
-pub fn create(raw: LibretroRaw, callbacks: CoreCallbacks) -> Arc<RetroContext> {
+pub fn create(raw: LibretroRaw, callbacks: RetroEnvCallbacks) -> Arc<RetroContext> {
     let sys_info = system::get_sys_info(&raw);
 
     let context = Arc::new(RetroContext {
@@ -99,35 +97,4 @@ mod retro_context {
             _ => panic!("Não foi possível iniciar o núcleo"),
         };
     }
-
-    // #[test]
-    // fn test_get_sys_info() {
-    //     let raw_result = test_tools::core::get_raw();
-
-    //     match raw_result {
-    //         Ok(raw) => {
-    //             let sys_info = retro_context::get_sys_info(&raw);
-
-    //             assert_eq!(
-    //                 *sys_info.library_name.lock().unwrap().clone(),
-    //                 "Snes9x".to_owned()
-    //             );
-
-    //             assert_eq!(
-    //                 *sys_info.library_version.lock().unwrap().clone(),
-    //                 "1.62.3 46f8a6b".to_owned()
-    //             );
-
-    //             assert_eq!(
-    //                 *sys_info.valid_extensions.lock().unwrap().clone(),
-    //                 "smc|sfc|swc|fig|bs|st".to_owned()
-    //             );
-
-    //             assert_eq!(*sys_info.block_extract.lock().unwrap(), false);
-
-    //             assert_eq!(*sys_info.need_fullpath.lock().unwrap(), false);
-    //         }
-    //         _ => {}
-    //     }
-    // }
 }

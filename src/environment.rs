@@ -2,13 +2,16 @@ use crate::{
     binding_libretro::{
         retro_controller_info, retro_core_option_display, retro_core_options_v2_intl,
         retro_language, retro_pixel_format, retro_subsystem_info,
-        RETRO_ENVIRONMENT_GET_CORE_OPTIONS_VERSION, RETRO_ENVIRONMENT_GET_LANGUAGE,
-        RETRO_ENVIRONMENT_GET_LOG_INTERFACE, RETRO_ENVIRONMENT_GET_VARIABLE,
-        RETRO_ENVIRONMENT_SET_CONTROLLER_INFO, RETRO_ENVIRONMENT_SET_CORE_OPTIONS_DISPLAY,
+        RETRO_ENVIRONMENT_GET_CORE_OPTIONS_VERSION, RETRO_ENVIRONMENT_GET_INPUT_BITMASKS,
+        RETRO_ENVIRONMENT_GET_LANGUAGE, RETRO_ENVIRONMENT_GET_LOG_INTERFACE,
+        RETRO_ENVIRONMENT_GET_SAVE_DIRECTORY, RETRO_ENVIRONMENT_GET_SYSTEM_DIRECTORY,
+        RETRO_ENVIRONMENT_GET_VARIABLE, RETRO_ENVIRONMENT_SET_CONTROLLER_INFO,
+        RETRO_ENVIRONMENT_SET_CORE_OPTIONS_DISPLAY,
         RETRO_ENVIRONMENT_SET_CORE_OPTIONS_UPDATE_DISPLAY_CALLBACK,
         RETRO_ENVIRONMENT_SET_CORE_OPTIONS_V2_INTL, RETRO_ENVIRONMENT_SET_GEOMETRY,
-        RETRO_ENVIRONMENT_SET_INPUT_DESCRIPTORS, RETRO_ENVIRONMENT_SET_PIXEL_FORMAT,
-        RETRO_ENVIRONMENT_SET_SUBSYSTEM_INFO, RETRO_ENVIRONMENT_SET_SUPPORT_NO_GAME,
+        RETRO_ENVIRONMENT_SET_INPUT_DESCRIPTORS, RETRO_ENVIRONMENT_SET_PERFORMANCE_LEVEL,
+        RETRO_ENVIRONMENT_SET_PIXEL_FORMAT, RETRO_ENVIRONMENT_SET_SUBSYSTEM_INFO,
+        RETRO_ENVIRONMENT_SET_SUPPORT_ACHIEVEMENTS, RETRO_ENVIRONMENT_SET_SUPPORT_NO_GAME,
         RETRO_ENVIRONMENT_SET_VARIABLES,
     },
     constants::{self, MAX_CORE_SUBSYSTEM_INFO},
@@ -18,7 +21,15 @@ use crate::{
     system, tools,
 };
 use ::std::os::raw;
-use std::sync::Arc;
+use std::{os::raw::c_void, sync::Arc};
+
+pub struct RetroEnvCallbacks {
+    pub video_refresh_callback: fn(data: *const c_void, width: i32, height: i32, pitch: usize),
+    pub audio_sample_callback: fn(left: i16, right: i16),
+    pub audio_sample_batch_callback: fn(data: *const i16, frames: usize) -> usize,
+    pub input_poll_callback: fn(),
+    pub input_state_callback: fn(port: i16, device: i16, index: i16, id: i16) -> i16,
+}
 
 static mut CONTEXT: Option<Arc<RetroContext>> = None;
 
@@ -95,6 +106,18 @@ pub unsafe extern "C" fn core_environment(
             }
 
             return true;
+        }
+        RETRO_ENVIRONMENT_GET_SYSTEM_DIRECTORY => {
+            println!("RETRO_ENVIRONMENT_GET_SYSTEM_DIRECTORY");
+        }
+        RETRO_ENVIRONMENT_GET_SAVE_DIRECTORY => {
+            println!("RETRO_ENVIRONMENT_GET_SAVE_DIRECTORY");
+        }
+        RETRO_ENVIRONMENT_SET_SUPPORT_ACHIEVEMENTS => {
+            println!("RETRO_ENVIRONMENT_SET_SUPPORT_ACHIEVEMENTS");
+        }
+        RETRO_ENVIRONMENT_SET_PERFORMANCE_LEVEL => {
+            println!("RETRO_ENVIRONMENT_SET_PERFORMANCE_LEVEL");
         }
         RETRO_ENVIRONMENT_GET_CORE_OPTIONS_VERSION => {
             println!("RETRO_ENVIRONMENT_GET_CORE_OPTIONS_VERSION -> ok");
@@ -189,6 +212,9 @@ pub unsafe extern "C" fn core_environment(
             }
 
             return true;
+        }
+        RETRO_ENVIRONMENT_GET_INPUT_BITMASKS => {
+            println!("RETRO_ENVIRONMENT_GET_INPUT_BITMASKS");
         }
         RETRO_ENVIRONMENT_SET_CONTROLLER_INFO => {
             println!("RETRO_ENVIRONMENT_SET_CONTROLLER_INFO -> ok");
