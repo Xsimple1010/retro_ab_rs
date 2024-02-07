@@ -3,7 +3,7 @@ use std::{path::PathBuf, sync::Arc};
 use crate::{
     binding_libretro::LibretroRaw,
     core::{CoreCallbacks, CoreWrapper},
-    option_manager::OptionManager,
+    managers::option_manager::OptionManager,
     system,
 };
 

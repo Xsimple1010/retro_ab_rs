@@ -12,7 +12,8 @@ use crate::{
         RETRO_ENVIRONMENT_SET_VARIABLES,
     },
     constants::{self, MAX_CORE_SUBSYSTEM_INFO},
-    controller_info, option_manager,
+    controller_info,
+    managers::option_manager,
     retro_context::RetroContext,
     system, tools,
 };
