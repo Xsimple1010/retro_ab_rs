@@ -2,6 +2,7 @@ mod binding_libretro;
 mod constants;
 mod controller_info;
 mod environment;
+mod erro_handle;
 mod managers;
 mod retro_context;
 mod system;
