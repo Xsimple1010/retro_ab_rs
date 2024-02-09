@@ -2,7 +2,7 @@ use std::{path::PathBuf, sync::Arc};
 
 use crate::{
     binding_libretro::LibretroRaw, core::CoreWrapper, environment::RetroEnvCallbacks,
-    managers::option_manager::OptionManager, system,
+    managers::option_manager::OptionManager, paths::Paths, system,
 };
 
 // #[derive(Debug, PartialEq, Eq)]
@@ -11,6 +11,7 @@ pub struct RetroContext {
     pub core: CoreWrapper,
     pub callbacks: RetroEnvCallbacks,
     pub options: OptionManager,
+    pub paths: Paths,
 }
 
 static mut CONTEXTS: Vec<Arc<RetroContext>> = Vec::new();
@@ -33,13 +34,14 @@ fn create_id() -> String {
     "".to_string()
 }
 
-pub fn create(raw: LibretroRaw, callbacks: RetroEnvCallbacks) -> Arc<RetroContext> {
+pub fn create(raw: LibretroRaw, paths: Paths, callbacks: RetroEnvCallbacks) -> Arc<RetroContext> {
     let sys_info = system::get_sys_info(&raw);
 
     let context = Arc::new(RetroContext {
         id: create_id(),
         core: CoreWrapper::new(raw),
         callbacks,
+        paths,
         options: OptionManager::new(
             PathBuf::from("cfg").join(sys_info.library_name.lock().unwrap().to_owned() + ".opt"),
         ),
@@ -77,7 +79,11 @@ mod retro_context {
 
         match raw_result {
             Ok(raw) => {
-                let current_ctx = retro_context::create(raw, test_tools::core::get_callbacks());
+                let current_ctx = retro_context::create(
+                    raw,
+                    test_tools::paths::get_paths(),
+                    test_tools::core::get_callbacks(),
+                );
 
                 let len = retro_context::get_num_context();
                 assert_eq!(

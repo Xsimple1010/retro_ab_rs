@@ -2,11 +2,11 @@ use crate::{
     binding_libretro::{
         retro_controller_info, retro_core_option_display, retro_core_options_v2_intl,
         retro_language, retro_pixel_format, retro_subsystem_info,
-        RETRO_ENVIRONMENT_GET_CORE_OPTIONS_VERSION, RETRO_ENVIRONMENT_GET_INPUT_BITMASKS,
-        RETRO_ENVIRONMENT_GET_LANGUAGE, RETRO_ENVIRONMENT_GET_LOG_INTERFACE,
-        RETRO_ENVIRONMENT_GET_SAVE_DIRECTORY, RETRO_ENVIRONMENT_GET_SYSTEM_DIRECTORY,
-        RETRO_ENVIRONMENT_GET_VARIABLE, RETRO_ENVIRONMENT_SET_CONTROLLER_INFO,
-        RETRO_ENVIRONMENT_SET_CORE_OPTIONS_DISPLAY,
+        RETRO_ENVIRONMENT_GET_AUDIO_VIDEO_ENABLE, RETRO_ENVIRONMENT_GET_CORE_OPTIONS_VERSION,
+        RETRO_ENVIRONMENT_GET_INPUT_BITMASKS, RETRO_ENVIRONMENT_GET_LANGUAGE,
+        RETRO_ENVIRONMENT_GET_LOG_INTERFACE, RETRO_ENVIRONMENT_GET_SAVE_DIRECTORY,
+        RETRO_ENVIRONMENT_GET_SYSTEM_DIRECTORY, RETRO_ENVIRONMENT_GET_VARIABLE,
+        RETRO_ENVIRONMENT_SET_CONTROLLER_INFO, RETRO_ENVIRONMENT_SET_CORE_OPTIONS_DISPLAY,
         RETRO_ENVIRONMENT_SET_CORE_OPTIONS_UPDATE_DISPLAY_CALLBACK,
         RETRO_ENVIRONMENT_SET_CORE_OPTIONS_V2_INTL, RETRO_ENVIRONMENT_SET_GEOMETRY,
         RETRO_ENVIRONMENT_SET_INPUT_DESCRIPTORS, RETRO_ENVIRONMENT_SET_PERFORMANCE_LEVEL,
@@ -109,9 +109,51 @@ pub unsafe extern "C" fn core_environment(
         }
         RETRO_ENVIRONMENT_GET_SYSTEM_DIRECTORY => {
             println!("RETRO_ENVIRONMENT_GET_SYSTEM_DIRECTORY");
+
+            match &CONTEXT {
+                Some(ctx) => {
+                    // let minha_string = ctx.paths.system.clone();
+
+                    // let i = CString::new(minha_string.clone())
+                    //     .expect("msg")
+                    //     .as_c_str()
+                    //     .as_ptr() as *mut i8;
+
+                    // *(_data as *mut *mut c_char) = i;
+
+                    // libc::(*(_data as *mut *mut c_char), i as *const c_char);
+                    // // let test = *(_data as *mut *mut c_char);
+
+                    // let dd = *(_data as *mut *mut c_char);
+                    // let i = libc::strlen(dd);
+
+                    // if !dd.is_null() {
+                    //     println!("{:?} {:?}", i, &minha_string.len());
+                    // }
+                }
+                _ => return false,
+            }
         }
         RETRO_ENVIRONMENT_GET_SAVE_DIRECTORY => {
             println!("RETRO_ENVIRONMENT_GET_SAVE_DIRECTORY");
+
+            // match &CONTEXT {
+            //     Some(ctx) => {
+            //         let minha_string = ctx.paths.save.clone();
+
+            //         let i = CString::new(minha_string.clone())
+            //             .expect("msg")
+            //             .as_c_str()
+            //             .as_ptr() as *mut i8;
+
+            //         *(_data as *mut *mut c_char) = i;
+
+            //         println!("{:?}", i);
+            //     }
+            //     _ => return false,
+            // }
+
+            // return true;
         }
         RETRO_ENVIRONMENT_SET_SUPPORT_ACHIEVEMENTS => {
             println!("RETRO_ENVIRONMENT_SET_SUPPORT_ACHIEVEMENTS");
@@ -240,6 +282,10 @@ pub unsafe extern "C" fn core_environment(
                 _ => return false,
             }
 
+            return true;
+        }
+
+        RETRO_ENVIRONMENT_GET_AUDIO_VIDEO_ENABLE => {
             return true;
         }
         _ => {

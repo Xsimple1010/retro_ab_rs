@@ -1,6 +1,8 @@
 use crate::{
     binding_libretro::{retro_language, retro_pixel_format, LibretroRaw},
     environment::{self, RetroEnvCallbacks},
+    erro_handle::{self, ErroHandle, Level},
+    paths::Paths,
     retro_context,
     system::System,
     tools,
@@ -70,6 +72,8 @@ pub fn de_init(ctx: Arc<RetroContext>) {
     unsafe {
         ctx.core.raw.retro_deinit();
         *ctx.core.initialized.lock().unwrap() = false;
+        *ctx.core.game_loaded.lock().unwrap() = false;
+
         environment::delete_local_ctx();
         retro_context::delete(ctx);
     }
@@ -86,21 +90,36 @@ pub fn init(ctx: &Arc<RetroContext>) {
     }
 }
 
-pub fn load_game(ctx: &Arc<RetroContext>, path: &str) {
-    if !*ctx.core.game_loaded.lock().unwrap() && *ctx.core.initialized.lock().unwrap() {
-        tools::game_tools::load(&ctx.core.raw, path);
+pub fn load_game(ctx: &Arc<RetroContext>, path: &str) -> Result<bool, ErroHandle> {
+    if *ctx.core.game_loaded.lock().unwrap() && *ctx.core.initialized.lock().unwrap() {
+        return Err(ErroHandle {
+            level: Level::Erro,
+            message: "Ja existe uma rom carregada no momento".to_string(),
+        });
+    }
+
+    match tools::game_tools::load(&ctx.core.raw, path) {
+        Ok(state) => {
+            *ctx.core.game_loaded.lock().unwrap() = state;
+            Ok(state)
+        }
+        Err(e) => Err(e),
     }
 }
 
 pub fn unload_game() {}
 
-pub fn load(path: &str, callbacks: RetroEnvCallbacks) -> Result<Arc<RetroContext>, String> {
+pub fn load(
+    path: &str,
+    paths: Paths,
+    callbacks: RetroEnvCallbacks,
+) -> Result<Arc<RetroContext>, String> {
     unsafe {
         let result = LibretroRaw::new(path);
 
         match result {
             Ok(libretro_raw) => {
-                let context = Some(retro_context::create(libretro_raw, callbacks));
+                let context = Some(retro_context::create(libretro_raw, paths, callbacks));
 
                 match &context {
                     Some(ctx) => {

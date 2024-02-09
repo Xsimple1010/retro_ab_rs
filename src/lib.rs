@@ -5,10 +5,11 @@ mod environment;
 mod erro_handle;
 mod managers;
 mod retro_context;
-mod system;
 mod tools;
 
 pub mod core;
+pub mod paths;
+pub mod system;
 pub use environment::RetroEnvCallbacks;
 pub mod test_tools;
 pub use binding_libretro::retro_language;

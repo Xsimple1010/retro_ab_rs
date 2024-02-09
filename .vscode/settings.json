@@ -6,6 +6,7 @@
         "bitmask",
         "bitmasks",
         "bitor",
+        "canonicalize",
         "closedir",
         "deinit",
         "dirstream",

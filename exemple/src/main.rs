@@ -1,44 +1,18 @@
-use retro_ab::core;
-use std::{env, sync::Arc};
-
-fn audio_sample_callback(_left: i16, _right: i16) {}
-
-fn audio_sample_batch_callback(_data: *const i16, _frames: usize) -> usize {
-    println!("{_frames}");
-    0
-}
-
-fn input_poll_callback() {}
-
-fn input_state_callback(_port: i16, _device: i16, _index: i16, _id: i16) -> i16 {
-    println!("{_port} {_device}");
-    0
-}
-
-fn video_refresh_callback(
-    _data: *const ::std::os::raw::c_void,
-    _width: i32,
-    _height: i32,
-    _pitch: usize,
-) {
-}
+use retro_ab::{core, test_tools};
+use std::{env, f32::consts::E, sync::Arc};
 
 fn main() {
     let value = retro_ab::args_manager::get_values(env::args().collect());
 
     let mut context: Option<Arc<core::RetroContext>> = None;
 
-    let callbacks = retro_ab::RetroEnvCallbacks {
-        audio_sample_batch_callback,
-        audio_sample_callback,
-        input_poll_callback,
-        input_state_callback,
-        video_refresh_callback,
-    };
-
     match value.get_key_value("core") {
         Some((_, value)) => {
-            let result = core::load(value, callbacks);
+            let result = core::load(
+                value,
+                test_tools::paths::get_paths(),
+                test_tools::core::get_callbacks(),
+            );
 
             match result {
                 Ok(ctx) => context = Some(ctx),
@@ -49,11 +23,16 @@ fn main() {
     }
 
     match value.get_key_value("rom") {
-        Some((_, _value)) => match &context {
+        Some((_, value)) => match &context {
             Some(ctx) => {
                 core::init(&ctx);
-                // core::load_game(ctx, value);
-                // core::run(&ctx);
+                match core::load_game(ctx, value) {
+                    Ok(state) => println!("game is loaded -> {:?}", state),
+                    Err(e) => {
+                        println!("[erro]: level:{:?}; message: {:?}", e.level, e.message)
+                    }
+                };
+                core::run(&ctx);
             }
             _ => {}
         },
@@ -98,67 +77,67 @@ fn main() {
                 "file path -> {:?} \n",
                 ctx.options.file_path.lock().unwrap()
             );
-            for opt in &*ctx.options.opts.lock().unwrap() {
-                println!("key -> {:?}", opt.key.lock().unwrap());
-                println!("visibility -> {:?}", opt.visibility.lock().unwrap());
-                println!(
-                    "desc_categorized -> {:?}",
-                    opt.desc_categorized.lock().unwrap()
-                );
-                println!("info -> {:?}", opt.info.lock().unwrap());
-                println!(
-                    "info_categorized -> {:?}",
-                    opt.info_categorized.lock().unwrap()
-                );
-                println!("default_value -> {:?}", opt.default_value.lock().unwrap());
-                println!("");
-            }
+            // for opt in &*ctx.options.opts.lock().unwrap() {
+            //     println!("key -> {:?}", opt.key.lock().unwrap());
+            //     println!("visibility -> {:?}", opt.visibility.lock().unwrap());
+            //     println!(
+            //         "desc_categorized -> {:?}",
+            //         opt.desc_categorized.lock().unwrap()
+            //     );
+            //     println!("info -> {:?}", opt.info.lock().unwrap());
+            //     println!(
+            //         "info_categorized -> {:?}",
+            //         opt.info_categorized.lock().unwrap()
+            //     );
+            //     println!("default_value -> {:?}", opt.default_value.lock().unwrap());
+            //     println!("");
+            // }
 
-            println!("\n+++++categories here+++++");
-            for category in &*ctx.options.categories.lock().unwrap() {
-                println!("key -> {:?}", category.key.lock().unwrap());
+            // println!("\n+++++categories here+++++");
+            // for category in &*ctx.options.categories.lock().unwrap() {
+            //     println!("key -> {:?}", category.key.lock().unwrap());
 
-                println!("info -> {:?}", category.info.lock().unwrap());
+            //     println!("info -> {:?}", category.info.lock().unwrap());
 
-                println!("desc -> {:?}", category.desc.lock().unwrap());
-                println!("");
-            }
+            //     println!("desc -> {:?}", category.desc.lock().unwrap());
+            //     println!("");
+            // }
 
-            println!("\n+++++controller info+++++");
-            for ctr_info in &*ctx.core.system.ports.lock().unwrap() {
-                println!("num_types -> {:?}", ctr_info.num_types.lock().unwrap());
+            // println!("\n+++++controller info+++++");
+            // for ctr_info in &*ctx.core.system.ports.lock().unwrap() {
+            //     println!("num_types -> {:?}", ctr_info.num_types.lock().unwrap());
 
-                for desc in &ctr_info.types {
-                    println!("id -> {:?}", desc.id.lock().unwrap());
-                    println!("desc -> {:?}", desc.desc.lock().unwrap());
-                }
+            //     for desc in &ctr_info.types {
+            //         println!("id -> {:?}", desc.id.lock().unwrap());
+            //         println!("desc -> {:?}", desc.desc.lock().unwrap());
+            //     }
 
-                println!("")
-            }
+            //     println!("")
+            // }
 
-            println!("\n+++++system+++++");
-            for subsystem in &*ctx.core.system.subsystem.lock().unwrap() {
-                println!("id -> {:?}", subsystem.id.lock().unwrap());
-                println!("ident -> {:?}", subsystem.ident.lock().unwrap());
-                println!("desc -> {:?}", subsystem.desc.lock().unwrap());
+            // println!("\n+++++system+++++");
+            // for subsystem in &*ctx.core.system.subsystem.lock().unwrap() {
+            //     println!("id -> {:?}", subsystem.id.lock().unwrap());
+            //     println!("ident -> {:?}", subsystem.ident.lock().unwrap());
+            //     println!("desc -> {:?}", subsystem.desc.lock().unwrap());
 
-                for rom in &*subsystem.roms.lock().unwrap() {
-                    println!("rom: desc -> {:?}", rom.desc.lock().unwrap());
-                    println!(
-                        "rom: valide extensions -> {:?}",
-                        rom.valid_extensions.lock().unwrap()
-                    );
+            //     for rom in &*subsystem.roms.lock().unwrap() {
+            //         println!("rom: desc -> {:?}", rom.desc.lock().unwrap());
+            //         println!(
+            //             "rom: valide extensions -> {:?}",
+            //             rom.valid_extensions.lock().unwrap()
+            //         );
 
-                    println!(
-                        "memory: extensions -> {:?}",
-                        rom.memory.extension.lock().unwrap()
-                    );
+            //         println!(
+            //             "memory: extensions -> {:?}",
+            //             rom.memory.extension.lock().unwrap()
+            //         );
 
-                    println!("memory: type -> {:?}", rom.memory.type_.lock().unwrap());
-                }
+            //         println!("memory: type -> {:?}", rom.memory.type_.lock().unwrap());
+            //     }
 
-                println!("")
-            }
+            //     println!("")
+            // }
 
             core::de_init(ctx);
         }
