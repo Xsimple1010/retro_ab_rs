@@ -1,7 +1,7 @@
 use crate::{
-    binding_libretro::{retro_language, retro_pixel_format, LibretroRaw},
     environment::{self, RetroEnvCallbacks},
-    erro_handle::{self, ErroHandle, Level},
+    erro_handle::{ErroHandle, Level},
+    libretro::binding_libretro::{retro_language, retro_pixel_format, LibretroRaw},
     paths::Paths,
     retro_context,
     system::System,
@@ -98,8 +98,9 @@ pub fn load_game(ctx: &Arc<RetroContext>, path: &str) -> Result<bool, ErroHandle
         });
     }
 
-    match tools::game_tools::load(&ctx.core.raw, path) {
-        Ok(state) => {
+    match tools::game_tools::create_game_info(path) {
+        Ok(info) => {
+            let state = unsafe { ctx.core.raw.retro_load_game(&info) };
             *ctx.core.game_loaded.lock().unwrap() = state;
             Ok(state)
         }

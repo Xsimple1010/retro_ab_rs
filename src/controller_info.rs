@@ -1,8 +1,8 @@
 use std::sync::Mutex;
 
 use crate::{
-    binding_libretro::{retro_controller_description, retro_controller_info},
     constants::MAX_CORE_CONTROLLER_INFO_TYPES,
+    libretro::binding_libretro::{retro_controller_description, retro_controller_info},
     tools::ffi_tools::get_str_from_ptr,
 };
 

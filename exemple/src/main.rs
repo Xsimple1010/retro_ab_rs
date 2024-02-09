@@ -1,5 +1,5 @@
 use retro_ab::{core, test_tools};
-use std::{env, f32::consts::E, sync::Arc};
+use std::{env, sync::Arc};
 
 fn main() {
     let value = retro_ab::args_manager::get_values(env::args().collect());

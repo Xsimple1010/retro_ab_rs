@@ -1,13 +1,13 @@
 use std::sync::{Arc, Mutex};
 
 use crate::{
-    binding_libretro::{
-        retro_subsystem_info, retro_subsystem_memory_info, retro_subsystem_rom_info,
-        retro_system_info, LibretroRaw,
-    },
     constants::{MAX_CORE_SUBSYSTEM_INFO, MAX_CORE_SUBSYSTEM_ROM_INFO},
     controller_info::ControllerInfo,
     core::RetroContext,
+    libretro::binding_libretro::{
+        retro_subsystem_info, retro_subsystem_memory_info, retro_subsystem_rom_info,
+        retro_system_info, LibretroRaw,
+    },
     tools::{ffi_tools::get_str_from_ptr, mutex_tools::get_string_mutex_from_ptr},
 };
 

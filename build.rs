@@ -23,7 +23,7 @@ fn configure_files(temp_path: PathBuf, out_path: PathBuf) {
 }
 
 fn main() {
-    let out_path = PathBuf::from("./src/").join("binding_libretro.rs");
+    let out_path = PathBuf::from("./src/libretro").join("binding_libretro.rs");
     let temp_path = PathBuf::from(env::var("OUT_DIR").unwrap()).join("temp_binding_libretro.rs");
 
     let _ = bindgen::Builder::default()

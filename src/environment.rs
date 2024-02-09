@@ -1,5 +1,7 @@
 use crate::{
-    binding_libretro::{
+    constants::{self, MAX_CORE_SUBSYSTEM_INFO},
+    controller_info,
+    libretro::binding_libretro::{
         retro_controller_info, retro_core_option_display, retro_core_options_v2_intl,
         retro_language, retro_pixel_format, retro_subsystem_info,
         RETRO_ENVIRONMENT_GET_AUDIO_VIDEO_ENABLE, RETRO_ENVIRONMENT_GET_CORE_OPTIONS_VERSION,
@@ -14,8 +16,6 @@ use crate::{
         RETRO_ENVIRONMENT_SET_SUPPORT_ACHIEVEMENTS, RETRO_ENVIRONMENT_SET_SUPPORT_NO_GAME,
         RETRO_ENVIRONMENT_SET_VARIABLES,
     },
-    constants::{self, MAX_CORE_SUBSYSTEM_INFO},
-    controller_info,
     managers::option_manager,
     retro_context::RetroContext,
     system, tools,
@@ -109,51 +109,9 @@ pub unsafe extern "C" fn core_environment(
         }
         RETRO_ENVIRONMENT_GET_SYSTEM_DIRECTORY => {
             println!("RETRO_ENVIRONMENT_GET_SYSTEM_DIRECTORY");
-
-            match &CONTEXT {
-                Some(ctx) => {
-                    // let minha_string = ctx.paths.system.clone();
-
-                    // let i = CString::new(minha_string.clone())
-                    //     .expect("msg")
-                    //     .as_c_str()
-                    //     .as_ptr() as *mut i8;
-
-                    // *(_data as *mut *mut c_char) = i;
-
-                    // libc::(*(_data as *mut *mut c_char), i as *const c_char);
-                    // // let test = *(_data as *mut *mut c_char);
-
-                    // let dd = *(_data as *mut *mut c_char);
-                    // let i = libc::strlen(dd);
-
-                    // if !dd.is_null() {
-                    //     println!("{:?} {:?}", i, &minha_string.len());
-                    // }
-                }
-                _ => return false,
-            }
         }
         RETRO_ENVIRONMENT_GET_SAVE_DIRECTORY => {
             println!("RETRO_ENVIRONMENT_GET_SAVE_DIRECTORY");
-
-            // match &CONTEXT {
-            //     Some(ctx) => {
-            //         let minha_string = ctx.paths.save.clone();
-
-            //         let i = CString::new(minha_string.clone())
-            //             .expect("msg")
-            //             .as_c_str()
-            //             .as_ptr() as *mut i8;
-
-            //         *(_data as *mut *mut c_char) = i;
-
-            //         println!("{:?}", i);
-            //     }
-            //     _ => return false,
-            // }
-
-            // return true;
         }
         RETRO_ENVIRONMENT_SET_SUPPORT_ACHIEVEMENTS => {
             println!("RETRO_ENVIRONMENT_SET_SUPPORT_ACHIEVEMENTS");

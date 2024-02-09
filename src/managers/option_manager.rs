@@ -1,9 +1,9 @@
 use crate::{
-    binding_libretro::{
+    constants,
+    libretro::binding_libretro::{
         retro_core_option_v2_category, retro_core_option_v2_definition, retro_core_options_v2,
         retro_core_options_v2_intl,
     },
-    constants,
     retro_context::RetroContext,
     tools::mutex_tools::get_string_mutex_from_ptr,
 };
