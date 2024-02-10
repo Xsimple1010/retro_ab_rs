@@ -30,7 +30,6 @@ pub struct CoreWrapper {
     pub supports_bitmasks: Mutex<bool>,
     pub support_no_game: Mutex<bool>,
     pub language: Mutex<retro_language>,
-    // pub controller_info: Mutex<Vec<ControllerInfo>>,
     pub video: Video,
     pub system: System,
     raw: Arc<LibretroRaw>,
@@ -46,7 +45,6 @@ impl CoreWrapper {
             language: Mutex::new(retro_language::RETRO_LANGUAGE_PORTUGUESE_BRAZIL),
             supports_bitmasks: Mutex::new(false),
             system: System::default(),
-            // controller_info: Mutex::new(Vec::new()),
             video: Video {
                 can_dupe: false,
                 frame_delta: Some(0),
@@ -98,9 +96,8 @@ pub fn load_game(ctx: &Arc<RetroContext>, path: &str) -> Result<bool, ErroHandle
         });
     }
 
-    match tools::game_tools::create_game_info(path) {
-        Ok(info) => {
-            let state = unsafe { ctx.core.raw.retro_load_game(&info) };
+    match tools::game_tools::create_game_info(ctx, &ctx.core.raw, path) {
+        Ok(state) => {
             *ctx.core.game_loaded.lock().unwrap() = state;
             Ok(state)
         }

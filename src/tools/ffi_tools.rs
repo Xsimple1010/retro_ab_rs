@@ -1,4 +1,6 @@
-use std::ffi::{c_char, CStr};
+use std::ffi::{c_char, CStr, CString};
+
+use crate::erro_handle::{ErroHandle, Level};
 
 pub fn get_str_from_ptr(ptr: *const c_char) -> String {
     if ptr.is_null() {
@@ -10,4 +12,14 @@ pub fn get_str_from_ptr(ptr: *const c_char) -> String {
     let str_slice = c_str.to_str().unwrap();
 
     str::to_owned(str_slice)
+}
+
+pub fn make_c_string(rs_string: &str) -> Result<CString, ErroHandle> {
+    match CString::new(rs_string) {
+        Ok(c_string) => Ok(c_string),
+        _ => Err(ErroHandle {
+            level: Level::Erro,
+            message: "Nao foi possível cria uma c_string".to_string(),
+        }),
+    }
 }

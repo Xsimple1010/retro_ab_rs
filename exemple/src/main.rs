@@ -27,12 +27,14 @@ fn main() {
             Some(ctx) => {
                 core::init(&ctx);
                 match core::load_game(ctx, value) {
-                    Ok(state) => println!("game is loaded -> {:?}", state),
+                    Ok(state) => {
+                        println!("game is loaded -> {:?}", state);
+                        core::run(&ctx);
+                    }
                     Err(e) => {
                         println!("[erro]: level:{:?}; message: {:?}", e.level, e.message)
                     }
                 };
-                core::run(&ctx);
             }
             _ => {}
         },

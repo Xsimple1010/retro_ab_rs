@@ -8,7 +8,8 @@ use crate::{
         RETRO_ENVIRONMENT_GET_INPUT_BITMASKS, RETRO_ENVIRONMENT_GET_LANGUAGE,
         RETRO_ENVIRONMENT_GET_LOG_INTERFACE, RETRO_ENVIRONMENT_GET_SAVE_DIRECTORY,
         RETRO_ENVIRONMENT_GET_SYSTEM_DIRECTORY, RETRO_ENVIRONMENT_GET_VARIABLE,
-        RETRO_ENVIRONMENT_SET_CONTROLLER_INFO, RETRO_ENVIRONMENT_SET_CORE_OPTIONS_DISPLAY,
+        RETRO_ENVIRONMENT_GET_VARIABLE_UPDATE, RETRO_ENVIRONMENT_SET_CONTROLLER_INFO,
+        RETRO_ENVIRONMENT_SET_CORE_OPTIONS_DISPLAY,
         RETRO_ENVIRONMENT_SET_CORE_OPTIONS_UPDATE_DISPLAY_CALLBACK,
         RETRO_ENVIRONMENT_SET_CORE_OPTIONS_V2_INTL, RETRO_ENVIRONMENT_SET_GEOMETRY,
         RETRO_ENVIRONMENT_SET_INPUT_DESCRIPTORS, RETRO_ENVIRONMENT_SET_PERFORMANCE_LEVEL,
@@ -186,6 +187,9 @@ pub unsafe extern "C" fn core_environment(
             }
             return true;
         }
+        RETRO_ENVIRONMENT_GET_VARIABLE_UPDATE => {
+            println!("RETRO_ENVIRONMENT_GET_VARIABLE_UPDATE");
+        }
         RETRO_ENVIRONMENT_SET_VARIABLES => {
             println!("RETRO_ENVIRONMENT_SET_VARIABLES");
         }
@@ -197,6 +201,10 @@ pub unsafe extern "C" fn core_environment(
         }
         RETRO_ENVIRONMENT_GET_LOG_INTERFACE => {
             println!("RETRO_ENVIRONMENT_GET_LOG_INTERFACE");
+
+            //TODO: isso esta fazendo muita falta preciso implementa isso o mais rápido possível
+            //o rust nao deixa faze unsafe extern "C" fn(level: retro_log_level, fmt: *const ::std::os::raw::c_char, ...)
+            //                                                                                                        |provavelmente por causa dessa merda aqui!
         }
         RETRO_ENVIRONMENT_SET_SUBSYSTEM_INFO => {
             println!("RETRO_ENVIRONMENT_SET_SUBSYSTEM_INFO -> OK");
@@ -215,6 +223,7 @@ pub unsafe extern "C" fn core_environment(
         }
         RETRO_ENVIRONMENT_GET_INPUT_BITMASKS => {
             println!("RETRO_ENVIRONMENT_GET_INPUT_BITMASKS");
+            return true;
         }
         RETRO_ENVIRONMENT_SET_CONTROLLER_INFO => {
             println!("RETRO_ENVIRONMENT_SET_CONTROLLER_INFO -> ok");
@@ -244,6 +253,10 @@ pub unsafe extern "C" fn core_environment(
         }
 
         RETRO_ENVIRONMENT_GET_AUDIO_VIDEO_ENABLE => {
+            println!("RETRO_ENVIRONMENT_GET_AUDIO_VIDEO_ENABLE");
+
+            *(_data as *mut u32) = 1 << 0 | 1 << 1;
+
             return true;
         }
         _ => {
