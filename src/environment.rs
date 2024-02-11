@@ -1,25 +1,29 @@
 use crate::{
     constants::{self, MAX_CORE_SUBSYSTEM_INFO},
     controller_info,
-    libretro::binding_libretro::{
-        retro_controller_info, retro_core_option_display, retro_core_options_v2_intl,
-        retro_language, retro_pixel_format, retro_subsystem_info,
-        RETRO_ENVIRONMENT_GET_AUDIO_VIDEO_ENABLE, RETRO_ENVIRONMENT_GET_CORE_OPTIONS_VERSION,
-        RETRO_ENVIRONMENT_GET_INPUT_BITMASKS, RETRO_ENVIRONMENT_GET_LANGUAGE,
-        RETRO_ENVIRONMENT_GET_LOG_INTERFACE, RETRO_ENVIRONMENT_GET_SAVE_DIRECTORY,
-        RETRO_ENVIRONMENT_GET_SYSTEM_DIRECTORY, RETRO_ENVIRONMENT_GET_VARIABLE,
-        RETRO_ENVIRONMENT_GET_VARIABLE_UPDATE, RETRO_ENVIRONMENT_SET_CONTROLLER_INFO,
-        RETRO_ENVIRONMENT_SET_CORE_OPTIONS_DISPLAY,
-        RETRO_ENVIRONMENT_SET_CORE_OPTIONS_UPDATE_DISPLAY_CALLBACK,
-        RETRO_ENVIRONMENT_SET_CORE_OPTIONS_V2_INTL, RETRO_ENVIRONMENT_SET_GEOMETRY,
-        RETRO_ENVIRONMENT_SET_INPUT_DESCRIPTORS, RETRO_ENVIRONMENT_SET_PERFORMANCE_LEVEL,
-        RETRO_ENVIRONMENT_SET_PIXEL_FORMAT, RETRO_ENVIRONMENT_SET_SUBSYSTEM_INFO,
-        RETRO_ENVIRONMENT_SET_SUPPORT_ACHIEVEMENTS, RETRO_ENVIRONMENT_SET_SUPPORT_NO_GAME,
-        RETRO_ENVIRONMENT_SET_VARIABLES,
+    libretro::{
+        binding_libretro::{
+            retro_controller_info, retro_core_option_display, retro_core_options_v2_intl,
+            retro_language, retro_log_level, retro_pixel_format, retro_subsystem_info,
+            RETRO_ENVIRONMENT_GET_AUDIO_VIDEO_ENABLE, RETRO_ENVIRONMENT_GET_CORE_OPTIONS_VERSION,
+            RETRO_ENVIRONMENT_GET_INPUT_BITMASKS, RETRO_ENVIRONMENT_GET_LANGUAGE,
+            RETRO_ENVIRONMENT_GET_LOG_INTERFACE, RETRO_ENVIRONMENT_GET_SAVE_DIRECTORY,
+            RETRO_ENVIRONMENT_GET_SYSTEM_DIRECTORY, RETRO_ENVIRONMENT_GET_VARIABLE,
+            RETRO_ENVIRONMENT_GET_VARIABLE_UPDATE, RETRO_ENVIRONMENT_SET_CONTROLLER_INFO,
+            RETRO_ENVIRONMENT_SET_CORE_OPTIONS_DISPLAY,
+            RETRO_ENVIRONMENT_SET_CORE_OPTIONS_UPDATE_DISPLAY_CALLBACK,
+            RETRO_ENVIRONMENT_SET_CORE_OPTIONS_V2_INTL, RETRO_ENVIRONMENT_SET_GEOMETRY,
+            RETRO_ENVIRONMENT_SET_INPUT_DESCRIPTORS, RETRO_ENVIRONMENT_SET_PERFORMANCE_LEVEL,
+            RETRO_ENVIRONMENT_SET_PIXEL_FORMAT, RETRO_ENVIRONMENT_SET_SUBSYSTEM_INFO,
+            RETRO_ENVIRONMENT_SET_SUPPORT_ACHIEVEMENTS, RETRO_ENVIRONMENT_SET_SUPPORT_NO_GAME,
+            RETRO_ENVIRONMENT_SET_VARIABLES,
+        },
+        binding_log_interface,
     },
     managers::option_manager,
     retro_context::RetroContext,
-    system, tools,
+    system,
+    tools::{self, ffi_tools::get_str_from_ptr},
 };
 use ::std::os::raw;
 use std::{os::raw::c_void, sync::Arc};
@@ -89,6 +93,10 @@ pub unsafe extern "C" fn video_refresh_callback(
     _height: raw::c_uint,
     _pitch: usize,
 ) {
+}
+
+unsafe extern "C" fn core_log(level: retro_log_level, log: *const ::std::os::raw::c_char) {
+    println!("[{:?}]: {:?}", level, get_str_from_ptr(log));
 }
 
 pub unsafe extern "C" fn core_environment(
@@ -200,11 +208,11 @@ pub unsafe extern "C" fn core_environment(
             println!("RETRO_ENVIRONMENT_SET_INPUT_DESCRIPTORS");
         }
         RETRO_ENVIRONMENT_GET_LOG_INTERFACE => {
-            println!("RETRO_ENVIRONMENT_GET_LOG_INTERFACE");
+            println!("RETRO_ENVIRONMENT_GET_LOG_INTERFACE -> ok");
 
-            //TODO: isso esta fazendo muita falta preciso implementa isso o mais rápido possível
-            //o rust nao deixa faze unsafe extern "C" fn(level: retro_log_level, fmt: *const ::std::os::raw::c_char, ...)
-            //                                                                                                        |provavelmente por causa dessa merda aqui!
+            binding_log_interface::configure(Some(core_log), _data);
+
+            return true;
         }
         RETRO_ENVIRONMENT_SET_SUBSYSTEM_INFO => {
             println!("RETRO_ENVIRONMENT_SET_SUBSYSTEM_INFO -> OK");
@@ -269,3 +277,63 @@ pub unsafe extern "C" fn core_environment(
 }
 
 //TODO: novos teste para "fn core_environment"
+// #[cfg(test)]
+#[cfg(test)]
+mod test_environment {
+    use std::ffi::c_void;
+
+    use crate::{
+        environment::{configure, CONTEXT},
+        libretro::binding_libretro::{
+            RETRO_ENVIRONMENT_GET_INPUT_BITMASKS, RETRO_ENVIRONMENT_SET_PIXEL_FORMAT,
+        },
+        retro_pixel_format, test_tools,
+    };
+
+    use super::core_environment;
+
+    fn cfg_test() {
+        let ctx = test_tools::context::get_context(test_tools::core::get_raw().unwrap());
+        configure(ctx);
+    }
+
+    #[test]
+    fn input_bitmasks() {
+        let my_bool = true;
+        let data = &my_bool as *const bool as *mut c_void;
+
+        let result = unsafe { core_environment(RETRO_ENVIRONMENT_GET_INPUT_BITMASKS, data) };
+
+        assert_eq!(result, true);
+
+        assert_eq!(my_bool, true);
+    }
+
+    #[test]
+    fn pixel_format() {
+        cfg_test();
+        let pixel = retro_pixel_format::RETRO_PIXEL_FORMAT_RGB565;
+        let data = &pixel as *const retro_pixel_format as *mut std::ffi::c_void;
+
+        let result = unsafe { core_environment(RETRO_ENVIRONMENT_SET_PIXEL_FORMAT, data) };
+
+        assert_eq!(
+            result, true,
+            "returno inesperado: valor desejado -> true; valor recebido -> {:?}",
+            result,
+        );
+
+        unsafe {
+            match &CONTEXT {
+                Some(ctx) => assert_eq!(
+                    *ctx.core.video.pixel_format.lock().unwrap(),
+                    pixel,
+                    "returno inesperado: valor desejado -> {:?}; valor recebido -> {:?}",
+                    pixel,
+                    *ctx.core.video.pixel_format.lock().unwrap()
+                ),
+                _ => panic!("contexto nao foi encontrado"),
+            }
+        }
+    }
+}

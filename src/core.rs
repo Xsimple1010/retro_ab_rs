@@ -1,7 +1,10 @@
 use crate::{
     environment::{self, RetroEnvCallbacks},
     erro_handle::{ErroHandle, Level},
-    libretro::binding_libretro::{retro_language, retro_pixel_format, LibretroRaw},
+    libretro::{
+        binding_libretro::{retro_language, retro_pixel_format, LibretroRaw},
+        binding_log_interface,
+    },
     paths::Paths,
     retro_context,
     system::System,
@@ -72,6 +75,7 @@ pub fn de_init(ctx: Arc<RetroContext>) {
         *ctx.core.initialized.lock().unwrap() = false;
         *ctx.core.game_loaded.lock().unwrap() = false;
 
+        binding_log_interface::deinit();
         environment::delete_local_ctx();
         retro_context::delete(ctx);
     }
@@ -114,6 +118,10 @@ pub fn load(
 ) -> Result<Arc<RetroContext>, String> {
     unsafe {
         let result = LibretroRaw::new(path);
+
+        // let o = binding_log_interface::tes();
+
+        // println!("teste do lib aqui {:?}", o);
 
         match result {
             Ok(libretro_raw) => {

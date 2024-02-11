@@ -22,7 +22,32 @@ fn configure_files(temp_path: PathBuf, out_path: PathBuf) {
     bindings_file.write_all(temp_contents.as_bytes()).unwrap();
 }
 
-fn main() {
+fn libretro_tool() {
+    // Compile the C library
+    cc::Build::new()
+        .file("src/libretro/log_interface.c")
+        .compile("log_interface");
+
+    // Generate bindings
+    // let bindings = bindgen::Builder::default()
+    //     .header("src/libretro/log_interface.h")
+    //     .allowlist_function("core_log_cb|set_rs_cb")
+    //     .allowlist_item("rs_cb_t")
+    //     .clang_arg("-fparse-all-comments")
+    //     .default_enum_style(bindgen::EnumVariation::Rust {
+    //         non_exhaustive: true,
+    //     })
+    //     .generate()
+    //     .expect("Unable to generate bindings");
+
+    // // Write the bindings to the $OUT_DIR/bindings.rs file.
+    // let out_path = PathBuf::from("./src/libretro/binding_log_interface.rs");
+    // bindings
+    //     .write_to_file(out_path)
+    //     .expect("Couldn't write bindings!");
+}
+
+fn core_bindings() {
     let out_path = PathBuf::from("./src/libretro").join("binding_libretro.rs");
     let temp_path = PathBuf::from(env::var("OUT_DIR").unwrap()).join("temp_binding_libretro.rs");
 
@@ -48,4 +73,9 @@ fn main() {
         .write_to_file(temp_path.clone());
 
     configure_files(temp_path, out_path);
+}
+
+fn main() {
+    core_bindings();
+    libretro_tool();
 }

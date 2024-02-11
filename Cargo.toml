@@ -10,7 +10,7 @@ libloading = "0.8.1"
 
 [build-dependencies]
 bindgen = "0.69.2"
-
+cc = "1.0.83"
 
 [[example]]
 name = "retro_ab_example"
