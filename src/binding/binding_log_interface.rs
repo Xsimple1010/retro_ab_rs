@@ -1,12 +1,12 @@
 use super::binding_libretro::retro_log_level;
 
 #[doc = " essa callback deve ser criada no rust e envida para configure_log_interface"]
-pub type rs_cb_t = ::std::option::Option<
+pub type RsCbT = ::std::option::Option<
     unsafe extern "C" fn(level: retro_log_level, log: *const ::std::os::raw::c_char),
 >;
 extern "C" {
-    #[doc = " deve ser chamada para enviar fn core_log (rs_cb_t) para o CORE selecionado"]
-    pub fn configure_log_interface(rs_cb: rs_cb_t, data: *mut ::std::os::raw::c_void);
+    #[doc = " deve ser chamada para enviar fn core_log (RsCbT) para o CORE selecionado"]
+    pub fn configure_log_interface(rs_cb: RsCbT, data: *mut ::std::os::raw::c_void);
 }
 extern "C" {
     pub fn set_variable_value_as_null(data: *mut ::std::os::raw::c_void);

@@ -19,7 +19,7 @@ static void core_log_cb(enum retro_log_level level, const char *fmt, ...)
     rs_cb(level, buffer);
 }
 
-void configure_log_interface(rs_cb_t rs_cb_log, void *data)
+void configure_log_interface(RsCbT rs_cb_log, void *data)
 {
     rs_cb = rs_cb_log;
 

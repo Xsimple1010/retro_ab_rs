@@ -199,7 +199,18 @@ pub unsafe extern "C" fn core_environment(
             return true;
         }
         RETRO_ENVIRONMENT_GET_VARIABLE_UPDATE => {
-            println!("RETRO_ENVIRONMENT_GET_VARIABLE_UPDATE");
+            println!("RETRO_ENVIRONMENT_GET_VARIABLE_UPDATE -> ok");
+
+            match &CONTEXT {
+                Some(ctx) => {
+                    if !ctx.options.opts.lock().unwrap().is_empty() {
+                        *(_data as *mut bool) = *ctx.options.updated.lock().unwrap()
+                    } else {
+                        *(_data as *mut bool) = false;
+                    }
+                }
+                _ => return false,
+            }
 
             return true;
         }
@@ -234,6 +245,8 @@ pub unsafe extern "C" fn core_environment(
                                 _data,
                                 new_value.as_ptr(),
                             );
+
+                            *ctx.options.updated.lock().unwrap() = false;
 
                             return result;
                         }

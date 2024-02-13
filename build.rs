@@ -22,7 +22,7 @@ fn configure_files(temp_path: PathBuf, out_path: PathBuf) {
     bindings_file.write_all(temp_contents.as_bytes()).unwrap();
 }
 
-fn libretro_tool(out_path: &PathBuf) {
+fn libretro_tool(_out_path: &PathBuf) {
     // Compile the C library
     cc::Build::new()
         .file("src/libretro/log_interface.c")

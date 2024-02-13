@@ -19,17 +19,7 @@ pub struct Values {
     pub label: Mutex<String>,
 }
 
-// #[derive(Debug, Copy, Clone, PartialEq, Eq)]
 #[derive(Default)]
-pub enum OptionVersion {
-    Legacy,
-    V1Intl,
-    V1,
-    V2Intl,
-    #[default]
-    V2,
-}
-
 pub struct Options {
     pub key: Mutex<String>,
     pub visibility: Mutex<bool>,
@@ -51,36 +41,34 @@ pub struct Categories {
 }
 
 pub struct OptionManager {
-    pub version: Mutex<OptionVersion>,
     pub file_path: Mutex<PathBuf>,
     pub categories: Mutex<Vec<Categories>>,
+    pub updated: Mutex<bool>,
     pub opts: Mutex<Vec<Options>>,
-    // _origin_ptr: Mutex<*mut c_void>,
 }
 
 impl OptionManager {
     pub fn new(file_path: PathBuf) -> OptionManager {
-        // let expect_value = "".to_owned();
-        // let origin_ptr = &expect_value as *const String as *mut c_void;
-
         OptionManager {
-            version: Mutex::new(OptionVersion::V2),
+            updated: Mutex::new(true),
             categories: Mutex::new(Vec::new()),
             file_path: Mutex::new(file_path),
             opts: Mutex::new(Vec::new()),
-            // _origin_ptr: Mutex::new(origin_ptr),
         }
     }
 }
 
 pub fn update(ctx: Arc<RetroContext>, key: &str, value: &str) {
-    match *ctx.options.version.lock().unwrap() {
-        OptionVersion::Legacy => {}
-        OptionVersion::V1Intl => {}
-        OptionVersion::V1 => {}
-        OptionVersion::V2Intl => update_value_v2_intl(Arc::clone(&ctx), key, value),
-        OptionVersion::V2 => {}
+    for opt in &*ctx.options.opts.lock().unwrap() {
+        if opt.key.lock().unwrap().eq(key) {
+            *opt.key.lock().unwrap() = key.to_string();
+            *opt.selected.lock().unwrap() = value.to_string();
+
+            *ctx.options.updated.lock().unwrap() = true;
+        }
     }
+
+    write_all_options_in_file(Arc::clone(&ctx));
 }
 
 pub fn change_visibility(ctx: Arc<RetroContext>, key: String, visibility: bool) {
@@ -150,19 +138,6 @@ pub fn try_reload_pref_option(ctx: &Arc<RetroContext>) {
 //===============================================
 //=================v2_intl=======================
 //===============================================
-fn update_value_v2_intl(ctx: Arc<RetroContext>, key: &str, value: &str) {
-    // let _origin_options =
-    // unsafe { *(*ctx.options._origin_ptr.lock().unwrap() as *mut retro_core_options_v2_intl) };
-
-    for opt in &*ctx.options.opts.lock().unwrap() {
-        if opt.key.lock().unwrap().eq(key) {
-            *opt.key.lock().unwrap() = key.to_string();
-            *opt.selected.lock().unwrap() = value.to_string();
-        }
-    }
-
-    write_all_options_in_file(Arc::clone(&ctx));
-}
 
 fn get_v2_intl_category(categories: *mut retro_core_option_v2_category, ctx: &Arc<RetroContext>) {
     let categories = unsafe {
@@ -231,14 +206,7 @@ fn get_v2_intl_definitions(
     }
 }
 
-pub fn convert_option_v2_intl(
-    option_intl_v2: retro_core_options_v2_intl,
-    // origin_data: *mut c_void,
-    ctx: &Arc<RetroContext>,
-) {
-    *ctx.options.version.lock().unwrap() = OptionVersion::V2Intl;
-    // *ctx.options._origin_ptr.lock().unwrap() = origin_data;
-
+pub fn convert_option_v2_intl(option_intl_v2: retro_core_options_v2_intl, ctx: &Arc<RetroContext>) {
     unsafe {
         if option_intl_v2.local.is_null() {
             let us: retro_core_options_v2 = *(option_intl_v2.us);
