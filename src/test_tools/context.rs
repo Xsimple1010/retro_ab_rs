@@ -1,6 +1,6 @@
 use std::sync::Arc;
 
-use crate::{core::RetroContext, libretro::binding_libretro::LibretroRaw, retro_context};
+use crate::{binding::binding_libretro::LibretroRaw, core::RetroContext, retro_context};
 
 use super::{core, paths};
 

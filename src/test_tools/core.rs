@@ -1,6 +1,6 @@
 use super::constants::CORE_TEST_RELATIVE_PATH;
+use crate::binding::binding_libretro::LibretroRaw;
 use crate::environment::RetroEnvCallbacks;
-use crate::libretro::binding_libretro::LibretroRaw;
 
 fn audio_sample_callback(_left: i16, _right: i16) {}
 

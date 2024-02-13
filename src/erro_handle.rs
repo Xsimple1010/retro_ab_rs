@@ -6,7 +6,7 @@ pub enum Level {
     Fatal,
 }
 
-#[derive(Default)]
+#[derive(Default, Debug)]
 pub struct ErroHandle {
     pub level: Level,
     pub message: String,

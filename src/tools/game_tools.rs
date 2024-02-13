@@ -9,9 +9,9 @@ use std::{
 };
 
 use crate::{
+    binding::binding_libretro::{retro_game_info, LibretroRaw},
     core::RetroContext,
     erro_handle::{ErroHandle, Level},
-    libretro::binding_libretro::{retro_game_info, LibretroRaw},
 };
 
 use super::ffi_tools::make_c_string;

@@ -1,7 +1,7 @@
 use std::{path::PathBuf, sync::Arc};
 
 use crate::{
-    core::CoreWrapper, environment::RetroEnvCallbacks, libretro::binding_libretro::LibretroRaw,
+    binding::binding_libretro::LibretroRaw, core::CoreWrapper, environment::RetroEnvCallbacks,
     managers::option_manager::OptionManager, paths::Paths, system,
 };
 

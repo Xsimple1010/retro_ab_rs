@@ -1,16 +1,14 @@
 use crate::{
-    constants::{self, MAX_CORE_SUBSYSTEM_INFO},
-    controller_info,
-    libretro::{
+    binding::{
         binding_libretro::{
             retro_controller_info, retro_core_option_display, retro_core_options_v2_intl,
             retro_language, retro_log_level, retro_pixel_format, retro_subsystem_info,
-            RETRO_ENVIRONMENT_GET_AUDIO_VIDEO_ENABLE, RETRO_ENVIRONMENT_GET_CORE_OPTIONS_VERSION,
-            RETRO_ENVIRONMENT_GET_INPUT_BITMASKS, RETRO_ENVIRONMENT_GET_LANGUAGE,
-            RETRO_ENVIRONMENT_GET_LOG_INTERFACE, RETRO_ENVIRONMENT_GET_SAVE_DIRECTORY,
-            RETRO_ENVIRONMENT_GET_SYSTEM_DIRECTORY, RETRO_ENVIRONMENT_GET_VARIABLE,
-            RETRO_ENVIRONMENT_GET_VARIABLE_UPDATE, RETRO_ENVIRONMENT_SET_CONTROLLER_INFO,
-            RETRO_ENVIRONMENT_SET_CORE_OPTIONS_DISPLAY,
+            retro_variable, RETRO_ENVIRONMENT_GET_AUDIO_VIDEO_ENABLE,
+            RETRO_ENVIRONMENT_GET_CORE_OPTIONS_VERSION, RETRO_ENVIRONMENT_GET_INPUT_BITMASKS,
+            RETRO_ENVIRONMENT_GET_LANGUAGE, RETRO_ENVIRONMENT_GET_LOG_INTERFACE,
+            RETRO_ENVIRONMENT_GET_SAVE_DIRECTORY, RETRO_ENVIRONMENT_GET_SYSTEM_DIRECTORY,
+            RETRO_ENVIRONMENT_GET_VARIABLE, RETRO_ENVIRONMENT_GET_VARIABLE_UPDATE,
+            RETRO_ENVIRONMENT_SET_CONTROLLER_INFO, RETRO_ENVIRONMENT_SET_CORE_OPTIONS_DISPLAY,
             RETRO_ENVIRONMENT_SET_CORE_OPTIONS_UPDATE_DISPLAY_CALLBACK,
             RETRO_ENVIRONMENT_SET_CORE_OPTIONS_V2_INTL, RETRO_ENVIRONMENT_SET_GEOMETRY,
             RETRO_ENVIRONMENT_SET_INPUT_DESCRIPTORS, RETRO_ENVIRONMENT_SET_PERFORMANCE_LEVEL,
@@ -20,10 +18,15 @@ use crate::{
         },
         binding_log_interface,
     },
+    constants::{self, MAX_CORE_SUBSYSTEM_INFO},
+    controller_info,
     managers::option_manager,
     retro_context::RetroContext,
     system,
-    tools::{self, ffi_tools::get_str_from_ptr},
+    tools::{
+        self,
+        ffi_tools::{get_str_from_ptr, make_c_string},
+    },
 };
 use ::std::os::raw;
 use std::{os::raw::c_void, sync::Arc};
@@ -197,12 +200,47 @@ pub unsafe extern "C" fn core_environment(
         }
         RETRO_ENVIRONMENT_GET_VARIABLE_UPDATE => {
             println!("RETRO_ENVIRONMENT_GET_VARIABLE_UPDATE");
+
+            return true;
         }
         RETRO_ENVIRONMENT_SET_VARIABLES => {
             println!("RETRO_ENVIRONMENT_SET_VARIABLES");
         }
         RETRO_ENVIRONMENT_GET_VARIABLE => {
-            println!("RETRO_ENVIRONMENT_GET_VARIABLE ");
+            println!("RETRO_ENVIRONMENT_GET_VARIABLE -> ok");
+
+            let raw_variable = _data as *const retro_variable;
+
+            if raw_variable.is_null() {
+                return true;
+            }
+
+            binding_log_interface::set_variable_value_as_null(_data);
+
+            match &CONTEXT {
+                Some(ctx) => {
+                    if ctx.options.opts.lock().unwrap().is_empty() {
+                        return true;
+                    }
+
+                    let raw_variable = *(_data as *const retro_variable);
+                    let key = get_str_from_ptr(raw_variable.key);
+
+                    for opt in &*ctx.options.opts.lock().unwrap() {
+                        if opt.key.lock().unwrap().eq(&key) {
+                            let new_value = make_c_string(&*opt.selected.lock().unwrap()).unwrap();
+
+                            let result = binding_log_interface::set_new_value_variable(
+                                _data,
+                                new_value.as_ptr(),
+                            );
+
+                            return result;
+                        }
+                    }
+                }
+                _ => return true,
+            }
         }
         RETRO_ENVIRONMENT_SET_INPUT_DESCRIPTORS => {
             println!("RETRO_ENVIRONMENT_SET_INPUT_DESCRIPTORS");
@@ -210,7 +248,7 @@ pub unsafe extern "C" fn core_environment(
         RETRO_ENVIRONMENT_GET_LOG_INTERFACE => {
             println!("RETRO_ENVIRONMENT_GET_LOG_INTERFACE -> ok");
 
-            binding_log_interface::configure(Some(core_log), _data);
+            binding_log_interface::configure_log_interface(Some(core_log), _data);
 
             return true;
         }
@@ -230,7 +268,7 @@ pub unsafe extern "C" fn core_environment(
             return true;
         }
         RETRO_ENVIRONMENT_GET_INPUT_BITMASKS => {
-            println!("RETRO_ENVIRONMENT_GET_INPUT_BITMASKS");
+            println!("RETRO_ENVIRONMENT_GET_INPUT_BITMASKS -> ok");
             return true;
         }
         RETRO_ENVIRONMENT_SET_CONTROLLER_INFO => {
@@ -283,10 +321,10 @@ mod test_environment {
     use std::ffi::c_void;
 
     use crate::{
-        environment::{configure, CONTEXT},
-        libretro::binding_libretro::{
+        binding::binding_libretro::{
             RETRO_ENVIRONMENT_GET_INPUT_BITMASKS, RETRO_ENVIRONMENT_SET_PIXEL_FORMAT,
         },
+        environment::{configure, CONTEXT},
         retro_pixel_format, test_tools,
     };
 
