@@ -1,9 +1,10 @@
 use crate::{
+    av_info,
     binding::{
         binding_libretro::{
             retro_controller_info, retro_core_option_display, retro_core_options_v2_intl,
-            retro_language, retro_log_level, retro_pixel_format, retro_subsystem_info,
-            retro_variable, RETRO_ENVIRONMENT_GET_AUDIO_VIDEO_ENABLE,
+            retro_game_geometry, retro_language, retro_log_level, retro_pixel_format,
+            retro_subsystem_info, retro_variable, RETRO_ENVIRONMENT_GET_AUDIO_VIDEO_ENABLE,
             RETRO_ENVIRONMENT_GET_CORE_OPTIONS_VERSION, RETRO_ENVIRONMENT_GET_INPUT_BITMASKS,
             RETRO_ENVIRONMENT_GET_LANGUAGE, RETRO_ENVIRONMENT_GET_LOG_INTERFACE,
             RETRO_ENVIRONMENT_GET_SAVE_DIRECTORY, RETRO_ENVIRONMENT_GET_SYSTEM_DIRECTORY,
@@ -184,14 +185,28 @@ pub unsafe extern "C" fn core_environment(
             return true;
         }
         RETRO_ENVIRONMENT_SET_GEOMETRY => {
-            println!("RETRO_ENVIRONMENT_SET_GEOMETRY");
+            println!("RETRO_ENVIRONMENT_SET_GEOMETRY -> ok");
+            let raw_geometry_ptr = _data as *mut retro_game_geometry;
+
+            if raw_geometry_ptr.is_null() {
+                return false;
+            }
+
+            match &CONTEXT {
+                Some(ctx) => {
+                    av_info::try_set_new_geometry(&ctx, raw_geometry_ptr);
+                }
+                _ => return false,
+            }
+
+            return true;
         }
         RETRO_ENVIRONMENT_SET_PIXEL_FORMAT => {
             println!("RETRO_ENVIRONMENT_SET_PIXEL_FORMAT -> ok");
 
             match &CONTEXT {
                 Some(ctx) => {
-                    *ctx.core.video.pixel_format.lock().unwrap() =
+                    *ctx.core.av_info.video.pixel_format.lock().unwrap() =
                         *(_data as *mut retro_pixel_format);
                 }
                 None => return false,
@@ -335,10 +350,11 @@ mod test_environment {
 
     use crate::{
         binding::binding_libretro::{
-            RETRO_ENVIRONMENT_GET_INPUT_BITMASKS, RETRO_ENVIRONMENT_SET_PIXEL_FORMAT,
+            retro_pixel_format, RETRO_ENVIRONMENT_GET_INPUT_BITMASKS,
+            RETRO_ENVIRONMENT_SET_PIXEL_FORMAT,
         },
         environment::{configure, CONTEXT},
-        retro_pixel_format, test_tools,
+        test_tools,
     };
 
     use super::core_environment;
@@ -377,11 +393,11 @@ mod test_environment {
         unsafe {
             match &CONTEXT {
                 Some(ctx) => assert_eq!(
-                    *ctx.core.video.pixel_format.lock().unwrap(),
+                    *ctx.core.av_info.video.pixel_format.lock().unwrap(),
                     pixel,
                     "returno inesperado: valor desejado -> {:?}; valor recebido -> {:?}",
                     pixel,
-                    *ctx.core.video.pixel_format.lock().unwrap()
+                    *ctx.core.av_info.video.pixel_format.lock().unwrap()
                 ),
                 _ => panic!("contexto nao foi encontrado"),
             }

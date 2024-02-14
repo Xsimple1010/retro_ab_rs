@@ -1,6 +1,6 @@
 use crate::{
-    binding::binding_libretro::{retro_language, retro_pixel_format, LibretroRaw},
-    environment::{self, RetroEnvCallbacks},
+    binding::binding_libretro::LibretroRaw,
+    environment,
     erro_handle::{ErroHandle, Level},
     paths::Paths,
     retro_context,
@@ -9,20 +9,11 @@ use crate::{
 };
 use std::sync::{Arc, Mutex};
 
+pub use crate::av_info::{AvInfo, Geometry, Timing, Video};
+pub use crate::binding::binding_libretro::retro_language;
+pub use crate::binding::binding_libretro::retro_pixel_format;
+pub use crate::environment::RetroEnvCallbacks;
 pub use crate::retro_context::RetroContext;
-
-//TODO: implementar a trait Copy
-//isso vale para todas as struct aqui!
-
-pub struct Video {
-    pub can_dupe: bool,
-    pub had_frame: bool,
-    pub last_width: u32,
-    pub last_height: u32,
-    pub last_pitch: usize,
-    pub pixel_format: Mutex<retro_pixel_format>,
-    pub frame_delta: Option<i64>,
-}
 
 pub struct CoreWrapper {
     pub initialized: Mutex<bool>,
@@ -30,7 +21,7 @@ pub struct CoreWrapper {
     pub supports_bitmasks: Mutex<bool>,
     pub support_no_game: Mutex<bool>,
     pub language: Mutex<retro_language>,
-    pub video: Video,
+    pub av_info: AvInfo,
     pub system: System,
     raw: Arc<LibretroRaw>,
 }
@@ -45,15 +36,7 @@ impl CoreWrapper {
             language: Mutex::new(retro_language::RETRO_LANGUAGE_PORTUGUESE_BRAZIL),
             supports_bitmasks: Mutex::new(false),
             system: System::default(),
-            video: Video {
-                can_dupe: false,
-                frame_delta: Some(0),
-                had_frame: false,
-                last_height: 0,
-                last_width: 0,
-                last_pitch: 0,
-                pixel_format: Mutex::new(retro_pixel_format::RETRO_PIXEL_FORMAT_UNKNOWN),
-            },
+            av_info: AvInfo::default(),
         }
     }
 }

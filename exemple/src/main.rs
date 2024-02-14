@@ -30,6 +30,7 @@ fn main() {
                     Ok(state) => {
                         println!("game is loaded -> {:?}", state);
                         core::run(&ctx);
+                        core::run(&ctx);
                     }
                     Err(e) => {
                         println!("[erro]: level:{:?}; message: {:?}", e.level, e.message)
@@ -45,10 +46,21 @@ fn main() {
         Some(ctx) => {
             println!("=======core context=======");
             println!("core version -> {:?}", core::version(&ctx));
-            // println!("subsystem -> {:?}", *ctx.core.use_subsystem.lock().unwrap());
             println!(
                 "pixel format -> {:?}",
-                *ctx.core.video.pixel_format.lock().unwrap()
+                *ctx.core.av_info.video.pixel_format.lock().unwrap()
+            );
+            println!(
+                "base_height -> {:?}",
+                *ctx.core.av_info.video.geometry.base_height.lock().unwrap()
+            );
+            println!(
+                "base_width -> {:?}",
+                *ctx.core.av_info.video.geometry.base_width.lock().unwrap()
+            );
+            println!(
+                "aspect_ratio -> {:?}",
+                *ctx.core.av_info.video.geometry.aspect_ratio.lock().unwrap()
             );
             println!("language -> {:?}", *ctx.core.language.lock().unwrap());
 

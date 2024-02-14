@@ -1,4 +1,4 @@
-use retro_ab::*;
+use retro_ab::core::{self, retro_language, retro_pixel_format};
 
 mod common;
 
@@ -14,7 +14,7 @@ fn core_implement_tests() {
             );
 
             assert_eq!(
-                *ctx.core.video.pixel_format.lock().unwrap(),
+                *ctx.core.av_info.video.pixel_format.lock().unwrap(),
                 retro_pixel_format::RETRO_PIXEL_FORMAT_UNKNOWN
             );
 
