@@ -33,7 +33,7 @@ use ::std::os::raw;
 use std::{os::raw::c_void, sync::Arc};
 
 pub struct RetroEnvCallbacks {
-    pub video_refresh_callback: fn(data: *const c_void, width: i32, height: i32, pitch: usize),
+    pub video_refresh_callback: fn(data: *const c_void, width: u32, height: u32, pitch: usize),
     pub audio_sample_callback: fn(left: i16, right: i16),
     pub audio_sample_batch_callback: fn(data: *const i16, frames: usize) -> usize,
     pub input_poll_callback: fn(),
@@ -97,6 +97,12 @@ pub unsafe extern "C" fn video_refresh_callback(
     _height: raw::c_uint,
     _pitch: usize,
 ) {
+    match &CONTEXT {
+        Some(ctx) => {
+            (ctx.callbacks.video_refresh_callback)(_data, _width, _height, _pitch);
+        }
+        None => {}
+    }
 }
 
 unsafe extern "C" fn core_log(level: retro_log_level, log: *const ::std::os::raw::c_char) {
