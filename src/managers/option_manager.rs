@@ -58,28 +58,36 @@ impl OptionManager {
     }
 }
 
-pub fn update(ctx: Arc<RetroContext>, key: &str, value: &str) {
+fn change_value_selected(ctx: &Arc<RetroContext>, opt_key: &str, new_value_selected: &str) {
     for opt in &*ctx.options.opts.lock().unwrap() {
-        if opt.key.lock().unwrap().eq(key) {
-            *opt.key.lock().unwrap() = key.to_string();
-            *opt.selected.lock().unwrap() = value.to_string();
+        if opt.key.lock().unwrap().eq(opt_key) {
+            for v in &*opt.values.lock().unwrap() {
+                if *v.value.lock().unwrap() == new_value_selected {
+                    *opt.selected.lock().unwrap() = new_value_selected.to_string();
+                    *ctx.options.updated.lock().unwrap() = true;
+                    break;
+                }
+            }
 
-            *ctx.options.updated.lock().unwrap() = true;
+            break;
         }
     }
-
-    write_all_options_in_file(Arc::clone(&ctx));
 }
 
-pub fn change_visibility(ctx: Arc<RetroContext>, key: String, visibility: bool) {
+pub fn update_opt(ctx: &Arc<RetroContext>, opt_key: &str, new_value_selected: &str) {
+    change_value_selected(ctx, opt_key, new_value_selected);
+    write_all_options_in_file(ctx);
+}
+
+pub fn change_visibility(ctx: &Arc<RetroContext>, key: &str, visibility: bool) {
     for opt in &mut *ctx.options.opts.lock().unwrap() {
-        if *opt.key.lock().unwrap() == key {
+        if opt.key.lock().unwrap().eq(key) {
             *opt.visibility.lock().unwrap() = visibility;
         }
     }
 }
 
-fn write_all_options_in_file(ctx: Arc<RetroContext>) {
+fn write_all_options_in_file(ctx: &Arc<RetroContext>) {
     let file_path = ctx.options.file_path.lock().unwrap().clone();
     let mut file = File::create(file_path.clone()).unwrap();
 
@@ -93,7 +101,7 @@ fn write_all_options_in_file(ctx: Arc<RetroContext>) {
     }
 }
 
-fn load_all_option_in_file(ctx: Arc<RetroContext>) {
+fn load_all_option_in_file(ctx: &Arc<RetroContext>) {
     let file_path = ctx.options.file_path.lock().unwrap().clone();
 
     let mut file = File::open(file_path).unwrap();
@@ -110,15 +118,15 @@ fn load_all_option_in_file(ctx: Arc<RetroContext>) {
 
         let values: Vec<&str> = line.split('=').collect();
 
-        let key = values.first().unwrap();
-        let value = values.get(1).unwrap();
+        let opt_key = values.first().unwrap();
+        let value_selected = values
+            .get(1)
+            .expect("nao foi possível recupera o valor do arquivo de opções")
+            .split_ascii_whitespace()
+            .next()
+            .expect("nao foi possível recupera o valor do arquivo de opções");
 
-        for opt in &*ctx.options.opts.lock().unwrap() {
-            if opt.key.lock().unwrap().eq(key) {
-                *opt.key.lock().unwrap() = key.to_string();
-                *opt.selected.lock().unwrap() = value.to_string();
-            }
-        }
+        change_value_selected(ctx, opt_key, value_selected);
     }
 }
 
@@ -129,9 +137,9 @@ pub fn try_reload_pref_option(ctx: &Arc<RetroContext>) {
     //se o arquivo ainda nao existe apenas
     //crie um novo arquivo e salve a configuração padrão do núcleo
     if !file_path.exists() {
-        write_all_options_in_file(Arc::clone(ctx));
+        write_all_options_in_file(ctx);
     } else {
-        load_all_option_in_file(Arc::clone(ctx))
+        load_all_option_in_file(ctx)
     }
 }
 

@@ -14,5 +14,5 @@ pub mod system;
 pub mod test_tools;
 
 pub use managers::args_manager;
-pub use managers::option_manager::update as options_update;
+pub use managers::option_manager::update_opt;
 pub use retro_context::get_num_context;

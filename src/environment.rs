@@ -166,8 +166,8 @@ pub unsafe extern "C" fn core_environment(
                     let option = *(_data as *mut retro_core_option_display);
 
                     option_manager::change_visibility(
-                        Arc::clone(ctx),
-                        tools::ffi_tools::get_str_from_ptr(option.key),
+                        ctx,
+                        tools::ffi_tools::get_str_from_ptr(option.key).as_str(),
                         option.visible,
                     )
                 }
