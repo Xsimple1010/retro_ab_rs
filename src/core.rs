@@ -2,6 +2,7 @@ use crate::{
     binding::binding_libretro::LibretroRaw,
     environment,
     erro_handle::{ErroHandle, Level},
+    managers,
     paths::Paths,
     retro_context,
     system::System,
@@ -14,6 +15,8 @@ pub use crate::binding::binding_libretro::retro_language;
 pub use crate::binding::binding_libretro::retro_pixel_format;
 pub use crate::environment::RetroEnvCallbacks;
 pub use crate::retro_context::RetroContext;
+pub use managers::option_manager::update_opt;
+pub use retro_context::get_num_context;
 
 pub struct CoreWrapper {
     pub initialized: Mutex<bool>,
