@@ -32,7 +32,7 @@ fn libretro_tool(_out_path: &PathBuf) {
     // let bindings = bindgen::Builder::default()
     //     .header("src/libretro/log_interface.h")
     //     .allowlist_function(
-    //         "configure_log_interface|set_variable_value_as_null|set_new_value_variable",
+    //         "configure_log_interface|set_variable_value_as_null|set_new_value_variable|set_directory",
     //     )
     //     .allowlist_item("rs_cb_t")
     //     .clang_arg("-fparse-all-comments")

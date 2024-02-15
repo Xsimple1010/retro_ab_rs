@@ -36,16 +36,34 @@ void set_variable_value_as_null(void *data)
 
 bool set_new_value_variable(void *data, const char *new_value)
 {
-    struct retro_variable *var = (struct retro_variable*)data;
+    struct retro_variable *var = (struct retro_variable *)data;
 
     var->value = malloc(strlen(new_value) + 1);
 
-    if (var->value != NULL) {
+    if (var->value != NULL)
+    {
         strcpy(var->value, new_value);
         return true;
-    } else {
+    }
+    else
+    {
         var->value = NULL;
         return false;
     }
+}
 
+void set_directory(void *data, const char *new_directory)
+{
+    const char **dir = (const char **)data;
+
+    *dir = malloc(strlen(new_directory) + 1);
+
+    if (*dir != NULL)
+    {
+        strcpy(*dir, new_directory);
+    }
+    else
+    {
+        *dir = NULL;
+    }
 }

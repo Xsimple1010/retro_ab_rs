@@ -18,3 +18,10 @@ extern "C" {
         new_value: *const ::std::os::raw::c_char,
     ) -> bool;
 }
+extern "C" {
+    #[doc = " enviar um diretório para o núcleo. pode ser usando nas callbacks RETRO_ENVIRONMENT_GET_SAVE_DIRECTORY e RETRO_ENVIRONMENT_GET_SYSTEM_DIRECTORY"]
+    pub fn set_directory(
+        data: *mut ::std::os::raw::c_void,
+        new_directory: *const ::std::os::raw::c_char,
+    );
+}

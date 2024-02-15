@@ -127,10 +127,32 @@ pub unsafe extern "C" fn core_environment(
             return true;
         }
         RETRO_ENVIRONMENT_GET_SYSTEM_DIRECTORY => {
-            println!("RETRO_ENVIRONMENT_GET_SYSTEM_DIRECTORY");
+            println!("RETRO_ENVIRONMENT_GET_SYSTEM_DIRECTORY -> ok");
+
+            match &CONTEXT {
+                Some(ctx) => {
+                    let sys_dir = make_c_string(&ctx.paths.system).unwrap();
+
+                    binding_log_interface::set_directory(_data, sys_dir.as_ptr())
+                }
+                _ => return false,
+            }
+
+            return true;
         }
         RETRO_ENVIRONMENT_GET_SAVE_DIRECTORY => {
-            println!("RETRO_ENVIRONMENT_GET_SAVE_DIRECTORY");
+            println!("RETRO_ENVIRONMENT_GET_SAVE_DIRECTORY -> ok");
+
+            match &CONTEXT {
+                Some(ctx) => {
+                    let save_dir = make_c_string(&ctx.paths.save).unwrap();
+
+                    binding_log_interface::set_directory(_data, save_dir.as_ptr())
+                }
+                _ => return false,
+            }
+
+            return true;
         }
         RETRO_ENVIRONMENT_SET_SUPPORT_ACHIEVEMENTS => {
             println!("RETRO_ENVIRONMENT_SET_SUPPORT_ACHIEVEMENTS");
@@ -333,7 +355,7 @@ pub unsafe extern "C" fn core_environment(
         }
 
         RETRO_ENVIRONMENT_GET_AUDIO_VIDEO_ENABLE => {
-            println!("RETRO_ENVIRONMENT_GET_AUDIO_VIDEO_ENABLE");
+            println!("RETRO_ENVIRONMENT_GET_AUDIO_VIDEO_ENABLE -> ok");
 
             *(_data as *mut u32) = 1 << 0 | 1 << 1;
 
