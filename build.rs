@@ -2,7 +2,7 @@ use std::{
     env,
     fs::{File, OpenOptions},
     io::{Read, Write},
-    path::PathBuf,
+    path::{Path, PathBuf},
 };
 
 fn configure_files(temp_path: PathBuf, out_path: PathBuf) {
@@ -22,7 +22,7 @@ fn configure_files(temp_path: PathBuf, out_path: PathBuf) {
     bindings_file.write_all(temp_contents.as_bytes()).unwrap();
 }
 
-fn libretro_tool(_out_path: &PathBuf) {
+fn libretro_tool(_out_path: &Path) {
     // Compile the C library
     cc::Build::new()
         .file("src/libretro/log_interface.c")
@@ -49,7 +49,7 @@ fn libretro_tool(_out_path: &PathBuf) {
     //     .expect("Couldn't write bindings!");
 }
 
-fn core_bindings(out_path: &PathBuf) {
+fn core_bindings(out_path: &Path) {
     let temp_path = PathBuf::from(env::var("OUT_DIR").unwrap()).join("temp_binding_libretro.rs");
 
     let _ = bindgen::Builder::default()

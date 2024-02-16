@@ -222,7 +222,7 @@ pub unsafe extern "C" fn core_environment(
 
             match &CONTEXT {
                 Some(ctx) => {
-                    av_info::try_set_new_geometry(&ctx, raw_geometry_ptr);
+                    av_info::try_set_new_geometry(ctx, raw_geometry_ptr);
                 }
                 _ => return false,
             }
@@ -282,7 +282,7 @@ pub unsafe extern "C" fn core_environment(
 
                     for opt in &*ctx.options.opts.lock().unwrap() {
                         if opt.key.lock().unwrap().eq(&key) {
-                            let new_value = make_c_string(&*opt.selected.lock().unwrap()).unwrap();
+                            let new_value = make_c_string(&opt.selected.lock().unwrap()).unwrap();
 
                             let result = binding_log_interface::set_new_value_variable(
                                 _data,

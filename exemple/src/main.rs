@@ -161,7 +161,7 @@ fn main() {
             //     println!("")
             // }
 
-            core::de_init(ctx);
+            let _ = core::de_init(ctx);
         }
         None => {}
     }
