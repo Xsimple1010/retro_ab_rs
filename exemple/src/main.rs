@@ -25,16 +25,24 @@ fn main() {
     match value.get_key_value("rom") {
         Some((_, value)) => match &context {
             Some(ctx) => {
-                core::init(&ctx);
-                match core::load_game(ctx, value) {
-                    Ok(state) => {
-                        println!("game is loaded -> {:?}", state);
-                        core::run(&ctx);
-                        core::run(&ctx);
+                match core::init(&ctx) {
+                    Ok(..) => {
+                        match core::load_game(ctx, value) {
+                            Ok(state) => {
+                                println!("game is loaded -> {:?}", state);
+                                match core::run(&ctx) {
+                                    Ok(..) => {}
+                                    Err(e) => {
+                                        println!("[{:?}]: message -> {:?}", e.level, e.message)
+                                    }
+                                }
+                            }
+                            Err(e) => {
+                                println!("[{:?}]: message -> {:?}", e.level, e.message)
+                            }
+                        };
                     }
-                    Err(e) => {
-                        println!("[erro]: level:{:?}; message: {:?}", e.level, e.message)
-                    }
+                    Err(e) => println!("{:?}", e.message),
                 };
             }
             _ => {}

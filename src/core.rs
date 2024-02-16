@@ -44,41 +44,84 @@ impl CoreWrapper {
     }
 }
 
-pub fn run(ctx: &Arc<RetroContext>) {
-    unsafe {
-        if *ctx.core.game_loaded.lock().unwrap() && *ctx.core.initialized.lock().unwrap() {
-            ctx.core.raw.retro_run();
-        }
+pub fn run(ctx: &Arc<RetroContext>) -> Result<(), ErroHandle> {
+    if !*ctx.core.game_loaded.lock().unwrap() {
+        return Err(ErroHandle {
+            level: Level::Erro,
+            message: "Nao ha nenhuma rum carregada no momento".to_string(),
+        });
     }
+
+    if !*ctx.core.initialized.lock().unwrap() {
+        return Err(ErroHandle {
+            level: Level::Erro,
+            message: "O núcleo nao foi inicializado".to_string(),
+        });
+    }
+
+    unsafe {
+        ctx.core.raw.retro_run();
+    }
+
+    Ok(())
 }
 
-pub fn de_init(ctx: Arc<RetroContext>) {
+pub fn de_init(ctx: Arc<RetroContext>) -> Result<(), ErroHandle> {
+    if !*ctx.core.initialized.lock().unwrap() {
+        return Err(ErroHandle {
+            level: Level::Erro,
+            message: "Nao e possível descarrega o núcleo, pois o mesmo ainda nao foi inicializado!"
+                .to_string(),
+        });
+    }
+
+    //se uma rom estive carrega ela deve ser descarregada primeiro
+    unload_game(&ctx)?;
+
     unsafe {
         ctx.core.raw.retro_deinit();
         *ctx.core.initialized.lock().unwrap() = false;
-        *ctx.core.game_loaded.lock().unwrap() = false;
 
         environment::delete_local_ctx();
         retro_context::delete(ctx);
     }
+
+    Ok(())
 }
 
 pub fn version(ctx: &Arc<RetroContext>) -> u32 {
     unsafe { ctx.core.raw.retro_api_version() }
 }
 
-pub fn init(ctx: &Arc<RetroContext>) {
+pub fn init(ctx: &Arc<RetroContext>) -> Result<(), ErroHandle> {
+    if *ctx.core.game_loaded.lock().unwrap() || *ctx.core.initialized.lock().unwrap() {
+        return Err(ErroHandle {
+            level: Level::Erro,
+            message: "Para inicializar um novo núcleo e necessário descarrega o núcleo atual"
+                .to_string(),
+        });
+    }
+
     unsafe {
         *ctx.core.initialized.lock().unwrap() = true;
         ctx.core.raw.retro_init();
+
+        Ok(())
     }
 }
 
 pub fn load_game(ctx: &Arc<RetroContext>, path: &str) -> Result<bool, ErroHandle> {
-    if *ctx.core.game_loaded.lock().unwrap() && *ctx.core.initialized.lock().unwrap() {
+    if *ctx.core.game_loaded.lock().unwrap() {
         return Err(ErroHandle {
             level: Level::Erro,
             message: "Ja existe uma rom carregada no momento".to_string(),
+        });
+    }
+
+    if !*ctx.core.initialized.lock().unwrap() {
+        return Err(ErroHandle {
+            level: Level::Erro,
+            message: "Para carregar uma rom o núcleo deve esta inicializado".to_string(),
         });
     }
 
@@ -91,7 +134,28 @@ pub fn load_game(ctx: &Arc<RetroContext>, path: &str) -> Result<bool, ErroHandle
     }
 }
 
-pub fn unload_game() {}
+pub fn unload_game(ctx: &Arc<RetroContext>) -> Result<(), ErroHandle> {
+    if !*ctx.core.game_loaded.lock().unwrap() {
+        return Err(ErroHandle {
+            level: Level::Erro,
+            message: "A rom ja foi descarregada anteriormente".to_string(),
+        });
+    }
+
+    if !*ctx.core.initialized.lock().unwrap() {
+        return Err(ErroHandle {
+            level: Level::Erro,
+            message: "Para descarregar uma rom o núcleo deve esta inicializado".to_string(),
+        });
+    }
+
+    unsafe {
+        ctx.core.raw.retro_unload_game();
+    }
+    *ctx.core.game_loaded.lock().unwrap() = false;
+
+    Ok(())
+}
 
 pub fn load(
     path: &str,
