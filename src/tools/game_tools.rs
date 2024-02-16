@@ -11,7 +11,7 @@ use std::{
 use crate::{
     binding::binding_libretro::{retro_game_info, LibretroRaw},
     core::RetroContext,
-    erro_handle::{ErroHandle, Level},
+    erro_handle::{ErroHandle, RetroLogLevel},
 };
 
 use super::ffi_tools::make_c_string;
@@ -20,7 +20,7 @@ fn get_full_path(path: &str) -> Result<PathBuf, ErroHandle> {
     match PathBuf::from(path).canonicalize() {
         Ok(full_path) => Ok(full_path),
         Err(e) => Err(ErroHandle {
-            level: Level::Erro,
+            level: RetroLogLevel::RETRO_LOG_ERROR,
             message: e.to_string(),
         }),
     }
@@ -32,7 +32,7 @@ fn valid_rom_extension(ctx: &Arc<RetroContext>, path: &Path) -> Result<(), ErroH
 
     if !valid_extensions.contains(path_str) {
         return Err(ErroHandle {
-            level: Level::Erro,
+            level: RetroLogLevel::RETRO_LOG_ERROR,
             message: "Extensão da rom invalida: valores esperados -> ".to_string()
                 + &valid_extensions.to_string()
                 + "; valor recebido -> "
@@ -59,7 +59,6 @@ pub fn create_game_info(
 
     let need_full_path = *ctx.core.system.info.need_fullpath.lock().unwrap();
 
-    //TODO: preciso testa se isso esta funcionando
     if !need_full_path {
         let mut file = File::open(f_path).unwrap();
 

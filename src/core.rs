@@ -1,7 +1,7 @@
 use crate::{
     binding::binding_libretro::LibretroRaw,
     environment,
-    erro_handle::{ErroHandle, Level},
+    erro_handle::{ErroHandle, RetroLogLevel},
     managers,
     paths::Paths,
     retro_context,
@@ -45,17 +45,17 @@ impl CoreWrapper {
 }
 
 pub fn run(ctx: &Arc<RetroContext>) -> Result<(), ErroHandle> {
-    if !*ctx.core.game_loaded.lock().unwrap() {
+    if !*ctx.core.initialized.lock().unwrap() {
         return Err(ErroHandle {
-            level: Level::Erro,
-            message: "Nao ha nenhuma rum carregada no momento".to_string(),
+            level: RetroLogLevel::RETRO_LOG_ERROR,
+            message: "O núcleo nao foi inicializado".to_string(),
         });
     }
 
-    if !*ctx.core.initialized.lock().unwrap() {
+    if !*ctx.core.game_loaded.lock().unwrap() {
         return Err(ErroHandle {
-            level: Level::Erro,
-            message: "O núcleo nao foi inicializado".to_string(),
+            level: RetroLogLevel::RETRO_LOG_WARN,
+            message: "Nao ha nenhuma rum carregada no momento".to_string(),
         });
     }
 
@@ -69,7 +69,7 @@ pub fn run(ctx: &Arc<RetroContext>) -> Result<(), ErroHandle> {
 pub fn de_init(ctx: Arc<RetroContext>) -> Result<(), ErroHandle> {
     if !*ctx.core.initialized.lock().unwrap() {
         return Err(ErroHandle {
-            level: Level::Erro,
+            level: RetroLogLevel::RETRO_LOG_WARN,
             message: "Nao e possível descarrega o núcleo, pois o mesmo ainda nao foi inicializado!"
                 .to_string(),
         });
@@ -96,7 +96,7 @@ pub fn version(ctx: &Arc<RetroContext>) -> u32 {
 pub fn init(ctx: &Arc<RetroContext>) -> Result<(), ErroHandle> {
     if *ctx.core.game_loaded.lock().unwrap() || *ctx.core.initialized.lock().unwrap() {
         return Err(ErroHandle {
-            level: Level::Erro,
+            level: RetroLogLevel::RETRO_LOG_WARN,
             message: "Para inicializar um novo núcleo e necessário descarrega o núcleo atual"
                 .to_string(),
         });
@@ -113,14 +113,14 @@ pub fn init(ctx: &Arc<RetroContext>) -> Result<(), ErroHandle> {
 pub fn load_game(ctx: &Arc<RetroContext>, path: &str) -> Result<bool, ErroHandle> {
     if *ctx.core.game_loaded.lock().unwrap() {
         return Err(ErroHandle {
-            level: Level::Erro,
+            level: RetroLogLevel::RETRO_LOG_WARN,
             message: "Ja existe uma rom carregada no momento".to_string(),
         });
     }
 
     if !*ctx.core.initialized.lock().unwrap() {
         return Err(ErroHandle {
-            level: Level::Erro,
+            level: RetroLogLevel::RETRO_LOG_ERROR,
             message: "Para carregar uma rom o núcleo deve esta inicializado".to_string(),
         });
     }
@@ -137,14 +137,14 @@ pub fn load_game(ctx: &Arc<RetroContext>, path: &str) -> Result<bool, ErroHandle
 pub fn unload_game(ctx: &Arc<RetroContext>) -> Result<(), ErroHandle> {
     if !*ctx.core.game_loaded.lock().unwrap() {
         return Err(ErroHandle {
-            level: Level::Erro,
+            level: RetroLogLevel::RETRO_LOG_WARN,
             message: "A rom ja foi descarregada anteriormente".to_string(),
         });
     }
 
     if !*ctx.core.initialized.lock().unwrap() {
         return Err(ErroHandle {
-            level: Level::Erro,
+            level: RetroLogLevel::RETRO_LOG_ERROR,
             message: "Para descarregar uma rom o núcleo deve esta inicializado".to_string(),
         });
     }

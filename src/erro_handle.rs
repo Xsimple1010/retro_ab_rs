@@ -1,13 +1,7 @@
-#[derive(Default, Debug)]
-pub enum Level {
-    #[default]
-    Wa,
-    Erro,
-    Fatal,
-}
+pub use crate::binding::binding_libretro::retro_log_level as RetroLogLevel;
 
-#[derive(Default, Debug)]
+#[derive(Debug)]
 pub struct ErroHandle {
-    pub level: Level,
+    pub level: RetroLogLevel,
     pub message: String,
 }
