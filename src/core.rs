@@ -24,7 +24,7 @@ pub struct CoreWrapper {
     pub supports_bitmasks: Mutex<bool>,
     pub support_no_game: Mutex<bool>,
     pub language: Mutex<retro_language>,
-    pub av_info: AvInfo,
+    pub av_info: Arc<AvInfo>,
     pub system: System,
     raw: Arc<LibretroRaw>,
 }
@@ -36,10 +36,11 @@ impl CoreWrapper {
             initialized: Mutex::new(false),
             game_loaded: Mutex::new(false),
             support_no_game: Mutex::new(false),
+            //TODO:precisa modificado de acordo com o idioma selecionado no sistema operacional!
             language: Mutex::new(retro_language::RETRO_LANGUAGE_PORTUGUESE_BRAZIL),
             supports_bitmasks: Mutex::new(false),
             system: System::default(),
-            av_info: AvInfo::default(),
+            av_info: Arc::new(AvInfo::default()),
         }
     }
 }
@@ -167,40 +168,41 @@ pub fn load(
 
         match result {
             Ok(libretro_raw) => {
-                let context = Some(retro_context::create(libretro_raw, paths, callbacks));
+                let context = retro_context::create(libretro_raw, paths, callbacks);
 
-                match &context {
-                    Some(ctx) => {
-                        environment::configure(Arc::clone(ctx));
+                environment::configure(Arc::clone(&context));
 
-                        ctx.core
-                            .raw
-                            .retro_set_environment(Some(environment::core_environment));
+                context
+                    .core
+                    .raw
+                    .retro_set_environment(Some(environment::core_environment));
 
-                        ctx.core
-                            .raw
-                            .retro_set_audio_sample(Some(environment::audio_sample_callback));
+                context
+                    .core
+                    .raw
+                    .retro_set_audio_sample(Some(environment::audio_sample_callback));
 
-                        ctx.core.raw.retro_set_audio_sample_batch(Some(
-                            environment::audio_sample_batch_callback,
-                        ));
+                context
+                    .core
+                    .raw
+                    .retro_set_audio_sample_batch(Some(environment::audio_sample_batch_callback));
 
-                        ctx.core
-                            .raw
-                            .retro_set_video_refresh(Some(environment::video_refresh_callback));
+                context
+                    .core
+                    .raw
+                    .retro_set_video_refresh(Some(environment::video_refresh_callback));
 
-                        ctx.core
-                            .raw
-                            .retro_set_input_poll(Some(environment::input_poll_callback));
+                context
+                    .core
+                    .raw
+                    .retro_set_input_poll(Some(environment::input_poll_callback));
 
-                        ctx.core
-                            .raw
-                            .retro_set_input_state(Some(environment::input_state_callback));
+                context
+                    .core
+                    .raw
+                    .retro_set_input_state(Some(environment::input_state_callback));
 
-                        Ok(Arc::clone(ctx))
-                    }
-                    None => Err(String::from("value")),
-                }
+                Ok(Arc::clone(&context))
             }
             Err(_) => Err(String::from("Erro ao carregar o núcleo: ")),
         }
