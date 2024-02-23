@@ -2,4 +2,5 @@
 pub struct Paths {
     pub system: String,
     pub save: String,
+    pub opt: String,
 }

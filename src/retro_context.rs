@@ -37,14 +37,17 @@ fn create_id() -> String {
 pub fn create(raw: LibretroRaw, paths: Paths, callbacks: RetroEnvCallbacks) -> Arc<RetroContext> {
     let sys_info = system::get_sys_info(&raw);
 
+    let options = OptionManager::new(
+        PathBuf::from(paths.opt.clone())
+            .join(sys_info.library_name.lock().unwrap().to_owned() + ".opt"),
+    );
+
     let context = Arc::new(RetroContext {
         id: create_id(),
         core: CoreWrapper::new(raw),
         callbacks,
+        options,
         paths,
-        options: OptionManager::new(
-            PathBuf::from("cfg").join(sys_info.library_name.lock().unwrap().to_owned() + ".opt"),
-        ),
     });
 
     *context.core.system.info.library_name.lock().unwrap() =
