@@ -1,16 +1,18 @@
 use std::sync::{Arc, Mutex};
 
 use crate::{
-    binding::binding_libretro::retro_game_geometry,
+    binding::binding_libretro::{
+        retro_game_geometry, retro_system_av_info, retro_system_timing, LibretroRaw,
+    },
     core::{retro_pixel_format, RetroContext},
 };
 
 #[derive(Default)]
 pub struct Timing {
     #[doc = "FPS of video content."]
-    pub fps: Mutex<i32>,
+    pub fps: Mutex<f64>,
     #[doc = "Sampling rate of audio."]
-    pub sample_rate: Mutex<i32>,
+    pub sample_rate: Mutex<f64>,
 }
 
 #[derive(Default)]
@@ -57,7 +59,11 @@ pub struct AvInfo {
     pub timing: Timing,
 }
 
-pub fn try_set_new_geometry(ctx: &Arc<RetroContext>, raw_geometry_ptr: *mut retro_game_geometry) {
+pub fn try_set_new_geometry(ctx: &Arc<RetroContext>, raw_geometry_ptr: *const retro_game_geometry) {
+    if raw_geometry_ptr.is_null() {
+        return;
+    }
+
     let raw_geometry = unsafe { *raw_geometry_ptr };
     let geometry_ctx = &ctx.core.av_info.video.geometry;
 
@@ -71,4 +77,50 @@ pub fn try_set_new_geometry(ctx: &Arc<RetroContext>, raw_geometry_ptr: *mut retr
         *geometry_ctx.max_height.lock().unwrap() = raw_geometry.max_height;
         *geometry_ctx.max_width.lock().unwrap() = raw_geometry.max_width;
     }
+}
+
+fn _set_timing(ctx: &Arc<RetroContext>, raw_system_timing: *const retro_system_timing) {
+    if raw_system_timing.is_null() {
+        return;
+    }
+
+    let timing = unsafe { *raw_system_timing };
+
+    *ctx.core
+        .av_info
+        .timing
+        .fps
+        .lock()
+        .expect("Nao foi possível definir um novo valor para timing.fps") = timing.fps;
+
+    *ctx.core
+        .av_info
+        .timing
+        .sample_rate
+        .lock()
+        .expect("Nao foi possível definir um novo valor para timing.sample_rate") =
+        timing.sample_rate;
+}
+
+pub fn update_av_info(ctx: &Arc<RetroContext>, raw: &LibretroRaw) {
+    let mut raw_av_info = retro_system_av_info {
+        geometry: retro_game_geometry {
+            aspect_ratio: 0.0,
+            base_height: 0,
+            base_width: 0,
+            max_height: 0,
+            max_width: 0,
+        },
+        timing: retro_system_timing {
+            fps: 0.0,
+            sample_rate: 0.0,
+        },
+    };
+
+    unsafe {
+        raw.retro_get_system_av_info(&mut raw_av_info);
+    }
+
+    try_set_new_geometry(ctx, &mut raw_av_info.geometry);
+    _set_timing(ctx, &mut raw_av_info.timing);
 }

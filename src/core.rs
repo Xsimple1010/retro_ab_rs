@@ -1,4 +1,5 @@
 use crate::{
+    av_info::update_av_info,
     binding::binding_libretro::LibretroRaw,
     environment,
     erro_handle::{ErroHandle, RetroLogLevel},
@@ -129,6 +130,7 @@ pub fn load_game(ctx: &Arc<RetroContext>, path: &str) -> Result<bool, ErroHandle
     match tools::game_tools::create_game_info(ctx, &ctx.core.raw, path) {
         Ok(state) => {
             *ctx.core.game_loaded.lock().unwrap() = state;
+            update_av_info(ctx, &ctx.core.raw);
             Ok(state)
         }
         Err(e) => Err(e),
