@@ -91,6 +91,14 @@ pub fn de_init(ctx: Arc<RetroContext>) -> Result<(), ErroHandle> {
     Ok(())
 }
 
+pub fn connect_controller(ctx: &Arc<RetroContext>, port: u32, controller: u32) {
+    unsafe {
+        ctx.core
+            .raw
+            .retro_set_controller_port_device(port, controller);
+    }
+}
+
 pub fn version(ctx: &Arc<RetroContext>) -> u32 {
     unsafe { ctx.core.raw.retro_api_version() }
 }
