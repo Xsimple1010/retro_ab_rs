@@ -115,6 +115,7 @@ pub unsafe extern "C" fn core_environment(
 ) -> bool {
     match cmd {
         RETRO_ENVIRONMENT_SET_SUPPORT_NO_GAME => {
+            #[cfg(feature = "core_logs")]
             println!("RETRO_ENVIRONMENT_SET_SUPPORT_NO_GAME -> ok");
 
             match &CONTEXT {
@@ -127,6 +128,7 @@ pub unsafe extern "C" fn core_environment(
             return true;
         }
         RETRO_ENVIRONMENT_GET_SYSTEM_DIRECTORY => {
+            #[cfg(feature = "core_logs")]
             println!("RETRO_ENVIRONMENT_GET_SYSTEM_DIRECTORY -> ok");
 
             match &CONTEXT {
@@ -141,6 +143,7 @@ pub unsafe extern "C" fn core_environment(
             return true;
         }
         RETRO_ENVIRONMENT_GET_SAVE_DIRECTORY => {
+            #[cfg(feature = "core_logs")]
             println!("RETRO_ENVIRONMENT_GET_SAVE_DIRECTORY -> ok");
 
             match &CONTEXT {
@@ -155,17 +158,21 @@ pub unsafe extern "C" fn core_environment(
             return true;
         }
         RETRO_ENVIRONMENT_SET_SUPPORT_ACHIEVEMENTS => {
+            #[cfg(feature = "core_logs")]
             println!("RETRO_ENVIRONMENT_SET_SUPPORT_ACHIEVEMENTS");
         }
         RETRO_ENVIRONMENT_SET_PERFORMANCE_LEVEL => {
+            #[cfg(feature = "core_logs")]
             println!("RETRO_ENVIRONMENT_SET_PERFORMANCE_LEVEL");
         }
         RETRO_ENVIRONMENT_GET_CORE_OPTIONS_VERSION => {
+            #[cfg(feature = "core_logs")]
             println!("RETRO_ENVIRONMENT_GET_CORE_OPTIONS_VERSION -> ok");
             *(_data as *mut u32) = 2;
             return true;
         }
         RETRO_ENVIRONMENT_SET_CORE_OPTIONS_V2_INTL => {
+            #[cfg(feature = "core_logs")]
             println!("RETRO_ENVIRONMENT_SET_CORE_OPTIONS_V2_INTL -> ok");
 
             match &CONTEXT {
@@ -181,6 +188,7 @@ pub unsafe extern "C" fn core_environment(
             return true;
         }
         RETRO_ENVIRONMENT_SET_CORE_OPTIONS_DISPLAY => {
+            #[cfg(feature = "core_logs")]
             println!("RETRO_ENVIRONMENT_SET_CORE_OPTIONS_DISPLAY -> ok");
 
             match &CONTEXT {
@@ -199,9 +207,11 @@ pub unsafe extern "C" fn core_environment(
             return true;
         }
         RETRO_ENVIRONMENT_SET_CORE_OPTIONS_UPDATE_DISPLAY_CALLBACK => {
+            #[cfg(feature = "core_logs")]
             println!("RETRO_ENVIRONMENT_SET_CORE_OPTIONS_UPDATE_DISPLAY_CALLBACK");
         }
         RETRO_ENVIRONMENT_GET_LANGUAGE => {
+            #[cfg(feature = "core_logs")]
             println!("RETRO_ENVIRONMENT_GET_LANGUAGE -> ok");
             *(_data as *mut retro_language) = retro_language::RETRO_LANGUAGE_ENGLISH;
             match &CONTEXT {
@@ -213,6 +223,7 @@ pub unsafe extern "C" fn core_environment(
             return true;
         }
         RETRO_ENVIRONMENT_SET_GEOMETRY => {
+            #[cfg(feature = "core_logs")]
             println!("RETRO_ENVIRONMENT_SET_GEOMETRY -> ok");
             let raw_geometry_ptr = _data as *mut retro_game_geometry;
 
@@ -230,6 +241,7 @@ pub unsafe extern "C" fn core_environment(
             return true;
         }
         RETRO_ENVIRONMENT_SET_PIXEL_FORMAT => {
+            #[cfg(feature = "core_logs")]
             println!("RETRO_ENVIRONMENT_SET_PIXEL_FORMAT -> ok");
 
             match &CONTEXT {
@@ -242,6 +254,7 @@ pub unsafe extern "C" fn core_environment(
             return true;
         }
         RETRO_ENVIRONMENT_GET_VARIABLE_UPDATE => {
+            #[cfg(feature = "core_logs")]
             println!("RETRO_ENVIRONMENT_GET_VARIABLE_UPDATE -> ok");
 
             match &CONTEXT {
@@ -258,9 +271,11 @@ pub unsafe extern "C" fn core_environment(
             return true;
         }
         RETRO_ENVIRONMENT_SET_VARIABLES => {
+            #[cfg(feature = "core_logs")]
             println!("RETRO_ENVIRONMENT_SET_VARIABLES");
         }
         RETRO_ENVIRONMENT_GET_VARIABLE => {
+            #[cfg(feature = "core_logs")]
             println!("RETRO_ENVIRONMENT_GET_VARIABLE -> ok");
 
             let raw_variable = _data as *const retro_variable;
@@ -299,9 +314,11 @@ pub unsafe extern "C" fn core_environment(
             }
         }
         RETRO_ENVIRONMENT_SET_INPUT_DESCRIPTORS => {
+            #[cfg(feature = "core_logs")]
             println!("RETRO_ENVIRONMENT_SET_INPUT_DESCRIPTORS");
         }
         RETRO_ENVIRONMENT_GET_LOG_INTERFACE => {
+            #[cfg(feature = "core_logs")]
             println!("RETRO_ENVIRONMENT_GET_LOG_INTERFACE -> ok");
 
             binding_log_interface::configure_log_interface(Some(core_log), _data);
@@ -309,6 +326,7 @@ pub unsafe extern "C" fn core_environment(
             return true;
         }
         RETRO_ENVIRONMENT_SET_SUBSYSTEM_INFO => {
+            #[cfg(feature = "core_logs")]
             println!("RETRO_ENVIRONMENT_SET_SUBSYSTEM_INFO -> OK");
 
             match &CONTEXT {
@@ -324,10 +342,12 @@ pub unsafe extern "C" fn core_environment(
             return true;
         }
         RETRO_ENVIRONMENT_GET_INPUT_BITMASKS => {
+            #[cfg(feature = "core_logs")]
             println!("RETRO_ENVIRONMENT_GET_INPUT_BITMASKS -> ok");
             return true;
         }
         RETRO_ENVIRONMENT_SET_CONTROLLER_INFO => {
+            #[cfg(feature = "core_logs")]
             println!("RETRO_ENVIRONMENT_SET_CONTROLLER_INFO -> ok");
 
             match &CONTEXT {
@@ -355,6 +375,7 @@ pub unsafe extern "C" fn core_environment(
         }
 
         RETRO_ENVIRONMENT_GET_AUDIO_VIDEO_ENABLE => {
+            #[cfg(feature = "core_logs")]
             println!("RETRO_ENVIRONMENT_GET_AUDIO_VIDEO_ENABLE -> ok");
 
             *(_data as *mut u32) = 1 << 0 | 1 << 1;
