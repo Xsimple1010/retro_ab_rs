@@ -1,6 +1,7 @@
 use super::constants::CORE_TEST_RELATIVE_PATH;
 use crate::binding::binding_libretro::LibretroRaw;
 use crate::environment::RetroEnvCallbacks;
+use crate::retro_sys::retro_rumble_effect;
 
 fn audio_sample_callback(_left: i16, _right: i16) {}
 
@@ -25,6 +26,19 @@ fn video_refresh_callback(
     println!("video_refresh_callback -> width:{_width} height:{_height} pitch:{_pitch}")
 }
 
+fn rumble_callback(
+    port: ::std::os::raw::c_uint,
+    effect: retro_rumble_effect,
+    strength: u16,
+) -> bool {
+    println!(
+        "rumble_callback -> port:{:?} effect:{:?} strength:{:?}",
+        port, effect, strength
+    );
+
+    true
+}
+
 pub fn get_callbacks() -> RetroEnvCallbacks {
     RetroEnvCallbacks {
         audio_sample_batch_callback,
@@ -32,6 +46,7 @@ pub fn get_callbacks() -> RetroEnvCallbacks {
         input_poll_callback,
         input_state_callback,
         video_refresh_callback,
+        rumble_callback,
     }
 }
 

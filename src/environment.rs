@@ -23,6 +23,13 @@ use crate::{
     controller_info,
     managers::option_manager,
     retro_context::RetroContext,
+    retro_sys::{
+        retro_rumble_effect, retro_rumble_interface,
+        RETRO_ENVIRONMENT_GET_DISK_CONTROL_INTERFACE_VERSION, RETRO_ENVIRONMENT_GET_LED_INTERFACE,
+        RETRO_ENVIRONMENT_GET_MESSAGE_INTERFACE_VERSION, RETRO_ENVIRONMENT_GET_PERF_INTERFACE,
+        RETRO_ENVIRONMENT_GET_RUMBLE_INTERFACE, RETRO_ENVIRONMENT_GET_VFS_INTERFACE,
+        RETRO_ENVIRONMENT_SET_DISK_CONTROL_INTERFACE, RETRO_ENVIRONMENT_SET_SERIALIZATION_QUIRKS,
+    },
     system,
     tools::{
         self,
@@ -38,6 +45,8 @@ pub struct RetroEnvCallbacks {
     pub audio_sample_batch_callback: fn(data: *const i16, frames: usize) -> usize,
     pub input_poll_callback: fn(),
     pub input_state_callback: fn(port: i16, device: i16, index: i16, id: i16) -> i16,
+    pub rumble_callback:
+        fn(port: ::std::os::raw::c_uint, effect: retro_rumble_effect, strength: u16) -> bool,
 }
 
 static mut CONTEXT: Option<Arc<RetroContext>> = None;
@@ -102,6 +111,17 @@ pub unsafe extern "C" fn video_refresh_callback(
             (ctx.callbacks.video_refresh_callback)(_data, _width, _height, _pitch);
         }
         None => {}
+    }
+}
+
+unsafe extern "C" fn rumble_callback(
+    port: ::std::os::raw::c_uint,
+    effect: retro_rumble_effect,
+    strength: u16,
+) -> bool {
+    match &CONTEXT {
+        Some(ctx) => (ctx.callbacks.rumble_callback)(port, effect, strength),
+        None => false,
     }
 }
 
@@ -379,6 +399,35 @@ pub unsafe extern "C" fn core_environment(
             println!("RETRO_ENVIRONMENT_GET_AUDIO_VIDEO_ENABLE -> ok");
 
             *(_data as *mut u32) = 1 << 0 | 1 << 1;
+
+            return true;
+        }
+        RETRO_ENVIRONMENT_GET_VFS_INTERFACE => {
+            println!("RETRO_ENVIRONMENT_GET_VFS_INTERFACE");
+        }
+        RETRO_ENVIRONMENT_GET_LED_INTERFACE => {
+            println!("RETRO_ENVIRONMENT_GET_LED_INTERFACE");
+        }
+        RETRO_ENVIRONMENT_GET_MESSAGE_INTERFACE_VERSION => {
+            println!("RETRO_ENVIRONMENT_GET_MESSAGE_INTERFACE_VERSION");
+        }
+        RETRO_ENVIRONMENT_GET_DISK_CONTROL_INTERFACE_VERSION => {
+            println!("RETRO_ENVIRONMENT_GET_DISK_CONTROL_INTERFACE_VERSION");
+        }
+        RETRO_ENVIRONMENT_SET_DISK_CONTROL_INTERFACE => {
+            println!("RETRO_ENVIRONMENT_SET_DISK_CONTROL_INTERFACE");
+        }
+        RETRO_ENVIRONMENT_GET_PERF_INTERFACE => {
+            println!("RETRO_ENVIRONMENT_GET_PERF_INTERFACE");
+        }
+        RETRO_ENVIRONMENT_SET_SERIALIZATION_QUIRKS => {
+            println!("RETRO_ENVIRONMENT_SET_SERIALIZATION_QUIRKS");
+        }
+        RETRO_ENVIRONMENT_GET_RUMBLE_INTERFACE => {
+            println!("RETRO_ENVIRONMENT_GET_RUMBLE_INTERFACE");
+
+            let mut rumble_raw = *(_data as *mut retro_rumble_interface);
+            rumble_raw.set_rumble_state = Some(rumble_callback);
 
             return true;
         }
