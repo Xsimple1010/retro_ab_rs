@@ -19,8 +19,8 @@
                 }
             },
             "args": [
-                "--core=cores/test.dll",
-                "--rom=roms/teste.sfc"
+                "--core=C:/RetroArch-Win64/cores/mednafen_psx_libretro.dll",
+                "--rom=C:/WFL/roms/Crash Bandicoot (USA).cue"
             ],
             "cwd": "${workspaceFolder}"
         },

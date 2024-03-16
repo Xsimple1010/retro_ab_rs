@@ -5,6 +5,7 @@ mod controller_info;
 mod environment;
 mod managers;
 mod retro_context;
+mod retro_perf;
 mod tools;
 
 pub mod core;

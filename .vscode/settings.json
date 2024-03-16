@@ -25,10 +25,12 @@
         "RETROK",
         "Retruns",
         "rsplit",
+        "SIMD",
         "Snes",
         "sucess",
         "Uninit",
         "UNINIT",
+        "usec",
         "VSYNC"
     ],
     "rust-analyzer.linkedProjects": [

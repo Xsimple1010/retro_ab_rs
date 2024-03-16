@@ -23,8 +23,12 @@ use crate::{
     controller_info,
     managers::option_manager,
     retro_context::RetroContext,
+    retro_perf::{
+        core_get_perf_counter, core_perf_log, core_perf_register, core_perf_start, core_perf_stop,
+        get_cpu_features, get_features_get_time_usec,
+    },
     retro_sys::{
-        retro_rumble_effect, retro_rumble_interface,
+        retro_perf_callback, retro_rumble_effect, retro_rumble_interface,
         RETRO_ENVIRONMENT_GET_DISK_CONTROL_INTERFACE_VERSION, RETRO_ENVIRONMENT_GET_LED_INTERFACE,
         RETRO_ENVIRONMENT_GET_MESSAGE_INTERFACE_VERSION, RETRO_ENVIRONMENT_GET_PERF_INTERFACE,
         RETRO_ENVIRONMENT_GET_RUMBLE_INTERFACE, RETRO_ENVIRONMENT_GET_VFS_INTERFACE,
@@ -418,13 +422,25 @@ pub unsafe extern "C" fn core_environment(
             println!("RETRO_ENVIRONMENT_SET_DISK_CONTROL_INTERFACE");
         }
         RETRO_ENVIRONMENT_GET_PERF_INTERFACE => {
-            println!("RETRO_ENVIRONMENT_GET_PERF_INTERFACE");
+            println!("RETRO_ENVIRONMENT_GET_PERF_INTERFACE -> ok");
+
+            let mut perf = *(_data as *mut retro_perf_callback);
+
+            perf.get_time_usec = Some(get_features_get_time_usec);
+            perf.get_cpu_features = Some(get_cpu_features);
+            perf.get_perf_counter = Some(core_get_perf_counter);
+            perf.perf_register = Some(core_perf_register);
+            perf.perf_start = Some(core_perf_start);
+            perf.perf_stop = Some(core_perf_stop);
+            perf.perf_log = Some(core_perf_log);
+
+            return true;
         }
         RETRO_ENVIRONMENT_SET_SERIALIZATION_QUIRKS => {
             println!("RETRO_ENVIRONMENT_SET_SERIALIZATION_QUIRKS");
         }
         RETRO_ENVIRONMENT_GET_RUMBLE_INTERFACE => {
-            println!("RETRO_ENVIRONMENT_GET_RUMBLE_INTERFACE");
+            println!("RETRO_ENVIRONMENT_GET_RUMBLE_INTERFACE -> ok");
 
             let mut rumble_raw = *(_data as *mut retro_rumble_interface);
             rumble_raw.set_rumble_state = Some(rumble_callback);

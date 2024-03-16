@@ -10,6 +10,7 @@ core_logs = []
 
 [dependencies]
 libloading = "0.8.1"
+sdl2 = "0.36.0"
 
 [build-dependencies]
 bindgen = "0.69.2"
