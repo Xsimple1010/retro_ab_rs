@@ -46,7 +46,7 @@ impl CoreWrapper {
     }
 }
 
-pub fn run(ctx: &Arc<RetroContext>) -> Result<(), ErroHandle> {
+pub fn reset(ctx: &Arc<RetroContext>) -> Result<(), ErroHandle> {
     if !*ctx.core.initialized.lock().unwrap() {
         return Err(ErroHandle {
             level: RetroLogLevel::RETRO_LOG_ERROR,
@@ -62,8 +62,28 @@ pub fn run(ctx: &Arc<RetroContext>) -> Result<(), ErroHandle> {
     }
 
     unsafe {
-        ctx.core.raw.retro_run();
+        ctx.core.raw.retro_reset();
     }
+
+    Ok(())
+}
+
+pub fn run(ctx: &Arc<RetroContext>) -> Result<(), ErroHandle> {
+    if !*ctx.core.initialized.lock().unwrap() {
+        return Err(ErroHandle {
+            level: RetroLogLevel::RETRO_LOG_ERROR,
+            message: "O núcleo nao foi inicializado".to_string(),
+        });
+    }
+
+    if !*ctx.core.game_loaded.lock().unwrap() {
+        return Err(ErroHandle {
+            level: RetroLogLevel::RETRO_LOG_WARN,
+            message: "Nao ha nenhuma rum carregada no momento".to_string(),
+        });
+    }
+
+    unsafe { ctx.core.raw.retro_run() }
 
     Ok(())
 }
