@@ -98,25 +98,54 @@ pub fn de_init(ctx: Arc<RetroContext>) -> Result<(), ErroHandle> {
     }
 
     //se uma rom estive carrega ela deve ser descarregada primeiro
-    unload_game(&ctx)?;
+    match unload_game(&ctx) {
+        Ok(..) => {}
+        Err(e) => match &e.level {
+            RetroLogLevel::RETRO_LOG_WARN => {}
+            _ => {
+                unsafe {
+                    ctx.core.raw.retro_deinit();
+                }
+                *ctx.core.initialized.lock().unwrap() = false;
+
+                environment::delete_local_ctx();
+                retro_context::delete(ctx);
+                return Err(e);
+            }
+        },
+    }
 
     unsafe {
         ctx.core.raw.retro_deinit();
-        *ctx.core.initialized.lock().unwrap() = false;
-
-        environment::delete_local_ctx();
-        retro_context::delete(ctx);
     }
+    *ctx.core.initialized.lock().unwrap() = false;
+
+    environment::delete_local_ctx();
+    retro_context::delete(ctx);
 
     Ok(())
 }
 
-pub fn connect_controller(ctx: &Arc<RetroContext>, port: u32, controller: u32) {
+pub fn connect_controller(
+    ctx: &Arc<RetroContext>,
+    port: u32,
+    controller: u32,
+) -> Result<(), ErroHandle> {
+    if !*ctx.core.initialized.lock().unwrap() {
+        return Err(ErroHandle {
+            level: RetroLogLevel::RETRO_LOG_WARN,
+            message: "Nao é possível conectar um controle pois nenhum núcleo foi inicializado"
+                .to_string(),
+        });
+    }
+
     unsafe {
         ctx.core
             .raw
             .retro_set_controller_port_device(port, controller);
     }
+
+    Ok(())
 }
 
 pub fn version(ctx: &Arc<RetroContext>) -> u32 {

@@ -161,7 +161,10 @@ fn main() {
             //     println!("")
             // }
 
-            let _ = core::de_init(ctx);
+            match core::de_init(ctx) {
+                Ok(..) => {}
+                Err(e) => println!("{:?}", e),
+            }
         }
         None => {}
     }

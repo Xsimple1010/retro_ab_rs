@@ -1,3 +1,7 @@
+extern crate libloading;
+extern crate sdl2;
+extern crate uuid;
+
 mod av_info;
 mod binding;
 mod constants;

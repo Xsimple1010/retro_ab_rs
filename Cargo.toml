@@ -11,6 +11,11 @@ core_logs = []
 [dependencies]
 libloading = "0.8.1"
 sdl2 = "0.36.0"
+[dependencies.uuid]
+version = "1.8.0"
+features = [
+    "v4", # Lets you generate random UUIDs
+]
 
 [build-dependencies]
 bindgen = "0.69.2"

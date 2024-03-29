@@ -1,5 +1,7 @@
 use std::{path::PathBuf, sync::Arc};
 
+use uuid::Uuid;
+
 use crate::{
     binding::binding_libretro::LibretroRaw, core::CoreWrapper, environment::RetroEnvCallbacks,
     managers::option_manager::OptionManager, paths::Paths, system,
@@ -7,7 +9,7 @@ use crate::{
 
 // #[derive(Debug, PartialEq, Eq)]
 pub struct RetroContext {
-    pub id: String,
+    pub id: Uuid,
     pub core: CoreWrapper,
     pub callbacks: RetroEnvCallbacks,
     pub options: OptionManager,
@@ -30,8 +32,8 @@ pub fn get_num_context() -> usize {
     unsafe { CONTEXTS.len() }
 }
 
-fn create_id() -> String {
-    "".to_string()
+fn create_id() -> Uuid {
+    Uuid::new_v4()
 }
 
 pub fn create(raw: LibretroRaw, paths: Paths, callbacks: RetroEnvCallbacks) -> Arc<RetroContext> {
@@ -74,36 +76,66 @@ pub fn create(raw: LibretroRaw, paths: Paths, callbacks: RetroEnvCallbacks) -> A
 
 #[cfg(test)]
 mod retro_context {
+    use libloading::Error;
+    use std::sync::Arc;
+    use uuid::Uuid;
+
     use crate::{retro_context, test_tools};
 
-    #[test]
-    fn test_create_and_delete() {
+    use super::{RetroContext, CONTEXTS};
+
+    fn create_ctx() -> Result<Arc<RetroContext>, Error> {
         let raw_result = test_tools::core::get_raw();
 
         match raw_result {
             Ok(raw) => {
-                let current_ctx = retro_context::create(
+                let ctx = retro_context::create(
                     raw,
                     test_tools::paths::get_paths(),
                     test_tools::core::get_callbacks(),
                 );
 
-                let len = retro_context::get_num_context();
-                assert_eq!(
-                    len, 1,
-                    "há {:?} contextos ativos, a quantidade esperada era 1!",
-                    len
-                );
-
-                retro_context::delete(current_ctx);
-                let len = retro_context::get_num_context();
-                assert_eq!(
-                    len, 0,
-                    "há {:?} contextos ativos, a quantidade esperada era 0!",
-                    len
-                );
+                Ok(ctx)
             }
-            _ => panic!("Não foi possível iniciar o núcleo"),
-        };
+            Err(e) => Err(e),
+        }
+    }
+
+    fn has_initialized(id: Uuid) -> bool {
+        let mut has_initialized = false;
+
+        unsafe {
+            for ctx in &CONTEXTS {
+                if ctx.id == id {
+                    has_initialized = true;
+                }
+            }
+        }
+
+        has_initialized
+    }
+
+    #[test]
+    fn test_create_and_delete() -> Result<(), Error> {
+        let ctx = create_ctx()?;
+
+        assert_eq!(
+            has_initialized(ctx.id),
+            true,
+            "O contexto id -> {:?} nao foi inicializado!",
+            ctx.id
+        );
+
+        let current_id = ctx.id.clone();
+        retro_context::delete(ctx);
+
+        assert_eq!(
+            has_initialized(current_id),
+            false,
+            "O contexto id -> {:?} nao foi removido!",
+            current_id
+        );
+
+        Ok(())
     }
 }
