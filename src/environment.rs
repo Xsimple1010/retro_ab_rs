@@ -43,6 +43,7 @@ use crate::{
 use ::std::os::raw;
 use std::{os::raw::c_void, sync::Arc};
 
+#[derive(Clone, Copy)]
 pub struct RetroEnvCallbacks {
     pub video_refresh_callback: fn(data: *const c_void, width: u32, height: u32, pitch: usize),
     pub audio_sample_callback: fn(left: i16, right: i16),
