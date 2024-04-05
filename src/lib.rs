@@ -1,5 +1,4 @@
 extern crate libloading;
-extern crate sdl2;
 extern crate uuid;
 
 mod av_info;
@@ -9,7 +8,7 @@ mod controller_info;
 mod environment;
 mod managers;
 mod retro_context;
-mod retro_perf;
+// mod retro_perf;
 mod tools;
 
 pub mod core;
