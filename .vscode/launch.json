@@ -7,14 +7,11 @@
         {
             "type": "lldb",
             "request": "launch",
-            "name": "Debug executable 'retro_ab_example'",
+            "name": "Debug executable 'run_a_rom'",
             "cargo": {
-                "args": [
-                    "build",
-                    "--example=retro_ab_example",
-                ],
+                "args": ["build", "--example=run_a_rom"],
                 "filter": {
-                    "name": "retro_ab_example",
+                    "name": "run_a_rom",
                     "kind": "example"
                 }
             },

@@ -33,13 +33,5 @@
         "usec",
         "VSYNC"
     ],
-    "rust-analyzer.linkedProjects": [
-        ".\\Cargo.toml",
-        ".\\Cargo.toml",
-        ".\\Cargo.toml",
-        ".\\Cargo.toml",
-        ".\\Cargo.toml",
-        ".\\Cargo.toml",
-        ".\\exemple\\Cargo.toml"
-    ]
+    "rust-analyzer.linkedProjects": ["./Cargo.toml"]
 }

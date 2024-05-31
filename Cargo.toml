@@ -21,5 +21,4 @@ bindgen = "0.69.2"
 cc = "1.0.83"
 
 [[example]]
-name = "retro_ab_example"
-path = "exemple/src/main.rs"
+name = "run_a_rom"

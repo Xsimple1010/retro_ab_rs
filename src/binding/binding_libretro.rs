@@ -228,7 +228,7 @@ pub const RETRO_THROTTLE_VSYNC: u32 = 5;
 pub const RETRO_THROTTLE_UNBLOCKED: u32 = 6;
 pub const RETRO_MICROPHONE_INTERFACE_VERSION: u32 = 1;
 pub const RETRO_POWERSTATE_NO_ESTIMATE: i32 = -1;
-#[repr(i32)]
+#[repr(u32)]
 #[non_exhaustive]
 #[doc = " Id values for LANGUAGE"]
 #[derive(Debug, Copy, Clone, Hash, PartialEq, Eq)]
@@ -706,7 +706,7 @@ impl retro_key {
 #[repr(transparent)]
 #[doc = " Keysyms used for ID in input state callback when polling RETRO_KEYBOARD."]
 #[derive(Debug, Copy, Clone, Hash, PartialEq, Eq)]
-pub struct retro_key(pub ::std::os::raw::c_int);
+pub struct retro_key(pub ::std::os::raw::c_uint);
 impl retro_mod {
     pub const RETROKMOD_NONE: retro_mod = retro_mod(0);
 }
@@ -763,7 +763,7 @@ impl ::std::ops::BitAndAssign for retro_mod {
 }
 #[repr(transparent)]
 #[derive(Debug, Copy, Clone, Hash, PartialEq, Eq)]
-pub struct retro_mod(pub ::std::os::raw::c_int);
+pub struct retro_mod(pub ::std::os::raw::c_uint);
 #[doc = " Opaque file handle\n Introduced in VFS API v1"]
 #[repr(C)]
 #[derive(Debug, Copy, Clone)]
@@ -1148,7 +1148,7 @@ fn bindgen_test_layout_retro_vfs_interface_info() {
         )
     );
 }
-#[repr(i32)]
+#[repr(u32)]
 #[non_exhaustive]
 #[derive(Debug, Copy, Clone, Hash, PartialEq, Eq)]
 pub enum retro_hw_render_interface_type {
@@ -1321,7 +1321,7 @@ fn bindgen_test_layout_retro_midi_interface() {
         )
     );
 }
-#[repr(i32)]
+#[repr(u32)]
 #[non_exhaustive]
 #[derive(Debug, Copy, Clone, Hash, PartialEq, Eq)]
 pub enum retro_hw_render_context_negotiation_interface_type {
@@ -1884,7 +1884,7 @@ fn bindgen_test_layout_retro_get_proc_address_interface() {
         )
     );
 }
-#[repr(i32)]
+#[repr(u32)]
 #[non_exhaustive]
 #[derive(Debug, Copy, Clone, Hash, PartialEq, Eq)]
 pub enum retro_log_level {
@@ -2119,7 +2119,7 @@ fn bindgen_test_layout_retro_perf_callback() {
         )
     );
 }
-#[repr(i32)]
+#[repr(u32)]
 #[non_exhaustive]
 #[doc = " FIXME: Document the sensor API and work out behavior.\n It will be marked as experimental until then."]
 #[derive(Debug, Copy, Clone, Hash, PartialEq, Eq)]
@@ -2184,7 +2184,7 @@ fn bindgen_test_layout_retro_sensor_interface() {
         )
     );
 }
-#[repr(i32)]
+#[repr(u32)]
 #[non_exhaustive]
 #[derive(Debug, Copy, Clone, Hash, PartialEq, Eq)]
 pub enum retro_camera_buffer {
@@ -2449,7 +2449,7 @@ fn bindgen_test_layout_retro_location_callback() {
         )
     );
 }
-#[repr(i32)]
+#[repr(u32)]
 #[non_exhaustive]
 #[derive(Debug, Copy, Clone, Hash, PartialEq, Eq)]
 pub enum retro_rumble_effect {
@@ -2636,7 +2636,7 @@ pub type retro_hw_get_current_framebuffer_t =
 pub type retro_hw_get_proc_address_t = ::std::option::Option<
     unsafe extern "C" fn(sym: *const ::std::os::raw::c_char) -> retro_proc_address_t,
 >;
-#[repr(i32)]
+#[repr(u32)]
 #[non_exhaustive]
 #[derive(Debug, Copy, Clone, Hash, PartialEq, Eq)]
 pub enum retro_hw_context_type {
@@ -3259,7 +3259,7 @@ fn bindgen_test_layout_retro_netpacket_callback() {
         )
     );
 }
-#[repr(i32)]
+#[repr(u32)]
 #[non_exhaustive]
 #[derive(Debug, Copy, Clone, Hash, PartialEq, Eq)]
 pub enum retro_pixel_format {
@@ -3272,7 +3272,7 @@ pub enum retro_pixel_format {
     #[doc = " Ensure sizeof() == sizeof(int)."]
     RETRO_PIXEL_FORMAT_UNKNOWN = 2147483647,
 }
-#[repr(i32)]
+#[repr(u32)]
 #[non_exhaustive]
 #[derive(Debug, Copy, Clone, Hash, PartialEq, Eq)]
 pub enum retro_savestate_context {
@@ -3330,7 +3330,7 @@ fn bindgen_test_layout_retro_message() {
         )
     );
 }
-#[repr(i32)]
+#[repr(u32)]
 #[non_exhaustive]
 #[derive(Debug, Copy, Clone, Hash, PartialEq, Eq)]
 pub enum retro_message_target {
@@ -3338,7 +3338,7 @@ pub enum retro_message_target {
     RETRO_MESSAGE_TARGET_OSD = 1,
     RETRO_MESSAGE_TARGET_LOG = 2,
 }
-#[repr(i32)]
+#[repr(u32)]
 #[non_exhaustive]
 #[derive(Debug, Copy, Clone, Hash, PartialEq, Eq)]
 pub enum retro_message_type {
@@ -4996,7 +4996,7 @@ fn bindgen_test_layout_retro_microphone_interface() {
         )
     );
 }
-#[repr(i32)]
+#[repr(u32)]
 #[non_exhaustive]
 #[doc = " Describes how a device is being powered.\n @see RETRO_ENVIRONMENT_GET_DEVICE_POWER"]
 #[derive(Debug, Copy, Clone, Hash, PartialEq, Eq)]
