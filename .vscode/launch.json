@@ -7,7 +7,7 @@
         {
             "type": "lldb",
             "request": "launch",
-            "name": "Debug executable 'run_a_rom'",
+            "name": "Debug executable 'run_a_rom' linux",
             "cargo": {
                 "args": ["build", "--example=run_a_rom"],
                 "filter": {
@@ -16,28 +16,9 @@
                 }
             },
             "args": [
-                "--core=C:/RetroArch-Win64/cores/mednafen_psx_libretro.dll",
-                "--rom=C:/WFL/roms/Crash Bandicoot (USA).cue"
+                "--core=/home/aderval/Documentos/github/retro_ab_rs/cores/test.so",
+                "--rom=/home/aderval/Documentos/github/retro_ab_rs/roms/Mega Man X 3 (USA).smc"
             ],
-            "cwd": "${workspaceFolder}"
-        },
-        {
-            "type": "lldb",
-            "request": "launch",
-            "name": "Debug unit tests in executable 'retro_ab'",
-            "cargo": {
-                "args": [
-                    "test",
-                    "--no-run",
-                    "--bin=retro_ab",
-                    "--package=retro_ab"
-                ],
-                "filter": {
-                    "name": "retro_ab",
-                    "kind": "bin"
-                }
-            },
-            "args": [],
             "cwd": "${workspaceFolder}"
         }
     ]

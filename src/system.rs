@@ -130,22 +130,22 @@ mod test_system {
 
                 assert_eq!(
                     *sys_info.library_name.lock().unwrap().clone(),
-                    "Snes9x".to_owned()
+                    "bsnes".to_owned()
                 );
 
                 assert_eq!(
                     *sys_info.library_version.lock().unwrap().clone(),
-                    "1.62.3 46f8a6b".to_owned()
+                    "115".to_owned()
                 );
 
                 assert_eq!(
                     *sys_info.valid_extensions.lock().unwrap().clone(),
-                    "smc|sfc|swc|fig|bs|st".to_owned()
+                    "smc|sfc|gb|gbc|bs".to_owned()
                 );
 
                 assert_eq!(*sys_info.block_extract.lock().unwrap(), false);
 
-                assert_eq!(*sys_info.need_fullpath.lock().unwrap(), false);
+                assert_eq!(*sys_info.need_fullpath.lock().unwrap(), true);
             }
             _ => {}
         }

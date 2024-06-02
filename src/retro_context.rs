@@ -52,20 +52,41 @@ pub fn create(raw: LibretroRaw, paths: Paths, callbacks: RetroEnvCallbacks) -> A
         paths,
     });
 
-    *context.core.system.info.library_name.lock().unwrap() =
-        sys_info.library_name.lock().unwrap().to_owned();
+    sys_info
+        .library_name
+        .lock()
+        .unwrap()
+        .clone_into(&mut context.core.system.info.library_name.lock().unwrap());
 
-    *context.core.system.info.library_version.lock().unwrap() =
-        sys_info.library_version.lock().unwrap().clone();
+    context
+        .core
+        .system
+        .info
+        .library_version
+        .lock()
+        .unwrap()
+        .clone_from(&sys_info.library_version.lock().unwrap());
 
-    *context.core.system.info.valid_extensions.lock().unwrap() =
-        sys_info.valid_extensions.lock().unwrap().clone();
+    context
+        .core
+        .system
+        .info
+        .valid_extensions
+        .lock()
+        .unwrap()
+        .clone_from(&sys_info.valid_extensions.lock().unwrap());
 
-    *context.core.system.info.need_fullpath.lock().unwrap() =
-        sys_info.need_fullpath.lock().unwrap().to_owned();
+    sys_info
+        .need_fullpath
+        .lock()
+        .unwrap()
+        .clone_into(&mut context.core.system.info.need_fullpath.lock().unwrap());
 
-    *context.core.system.info.block_extract.lock().unwrap() =
-        sys_info.block_extract.lock().unwrap().to_owned();
+    sys_info
+        .block_extract
+        .lock()
+        .unwrap()
+        .clone_into(&mut context.core.system.info.block_extract.lock().unwrap());
 
     unsafe {
         CONTEXTS.push(Arc::clone(&context));
