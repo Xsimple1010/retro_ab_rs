@@ -98,7 +98,7 @@ pub fn create(raw: LibretroRaw, paths: Paths, callbacks: RetroEnvCallbacks) -> A
 #[cfg(test)]
 mod retro_context {
     use libloading::Error;
-    use std::sync::Arc;
+    use std::{ptr::addr_of, sync::Arc};
     use uuid::Uuid;
 
     use crate::{retro_context, test_tools};
@@ -126,7 +126,7 @@ mod retro_context {
         let mut has_initialized = false;
 
         unsafe {
-            for ctx in &CONTEXTS {
+            for ctx in &*addr_of!(CONTEXTS) {
                 if ctx.id == id {
                     has_initialized = true;
                 }

@@ -31,6 +31,8 @@
         "Uninit",
         "UNINIT",
         "usec",
+        "uuid",
+        "Uuid",
         "VSYNC"
     ],
     "rust-analyzer.linkedProjects": ["./Cargo.toml"]
