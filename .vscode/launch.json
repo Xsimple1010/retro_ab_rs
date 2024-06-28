@@ -20,6 +20,23 @@
                 "--rom=/home/aderval/Documentos/github/retro_ab_rs/roms/Mega Man X 3 (USA).smc"
             ],
             "cwd": "${workspaceFolder}"
+        },
+        {
+            "type": "lldb",
+            "request": "launch",
+            "name": "Debug executable 'run_a_rom' windowns",
+            "cargo": {
+                "args": ["build", "--example=run_a_rom"],
+                "filter": {
+                    "name": "run_a_rom",
+                    "kind": "example"
+                }
+            },
+            "args": [
+                "--core=C:/Users/aderv/projetos/retro_ab_av/cores/snes9x_libretro.dll",
+                "--rom=C:/Users/aderv/projetos/retro_ab_av/roms/Mega Man X (E).smc"
+            ],
+            "cwd": "${workspaceFolder}"
         }
     ]
 }

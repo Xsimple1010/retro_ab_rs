@@ -221,7 +221,7 @@ pub fn load(
     path: &str,
     paths: Paths,
     callbacks: RetroEnvCallbacks,
-) -> Result<Arc<RetroContext>, String> {
+) -> Result<Arc<RetroContext>, ErroHandle> {
     unsafe {
         let result = LibretroRaw::new(path);
 
@@ -263,7 +263,10 @@ pub fn load(
 
                 Ok(Arc::clone(&context))
             }
-            Err(_) => Err(String::from("Erro ao carregar o núcleo: ")),
+            Err(_) => Err(ErroHandle {
+                level: RetroLogLevel::RETRO_LOG_ERROR,
+                message: String::from("Erro ao carregar o núcleo: "),
+            }),
         }
     }
 }
