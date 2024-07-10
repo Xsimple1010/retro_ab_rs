@@ -1,34 +1,17 @@
 use std::{
     env,
-    fs::{File, OpenOptions},
-    io::{Read, Write},
-    path::{Path, PathBuf},
+    path::{PathBuf},
 };
 
-fn configure_files(temp_path: PathBuf, out_path: PathBuf) {
-    let mut temp_file = OpenOptions::new().read(true).open(temp_path).unwrap();
+fn libretro_tool() {
+    // let out_path = PathBuf::from("./src/binding");
 
-    let mut temp_contents = String::new();
-    temp_file.read_to_string(&mut temp_contents).unwrap();
-
-    let mut bindings_file = File::create(out_path).unwrap();
-
-    bindings_file
-        .write_all(
-            b"#![allow(dead_code,non_snake_case,non_camel_case_types,non_upper_case_globals)]\n\n",
-        )
-        .unwrap();
-
-    bindings_file.write_all(temp_contents.as_bytes()).unwrap();
-}
-
-fn libretro_tool(_out_path: &Path) {
     // Compile the C library
     cc::Build::new()
         .file("src/libretro/log_interface.c")
         .compile("log_interface");
 
-    // Generate bindings
+    // // Generate bindings
     // let bindings = bindgen::Builder::default()
     //     .header("src/libretro/log_interface.h")
     //     .allowlist_function(
@@ -41,16 +24,16 @@ fn libretro_tool(_out_path: &Path) {
     //     })
     //     .generate()
     //     .expect("Unable to generate bindings");
-
+    //
     // // Write the bindings to the $OUT_DIR/bindings.rs file.
-
+    //
     // bindings
     //     .write_to_file(out_path.join("binding_log_interface.rs"))
     //     .expect("Couldn't write bindings!");
 }
 
-fn core_bindings(out_path: &Path) {
-    let temp_path = PathBuf::from(env::var("OUT_DIR").unwrap()).join("temp_binding_libretro.rs");
+fn core_bindings() {
+    let temp_path = PathBuf::from(env::var("OUT_DIR").unwrap()).join("temp_binding_lib_retro.rs");
 
     let _ = bindgen::Builder::default()
         .header("src/libretro/libretro.h")
@@ -72,12 +55,10 @@ fn core_bindings(out_path: &Path) {
         .generate()
         .expect("Unable to generate libretro.h bindings")
         .write_to_file(temp_path.clone());
-
-    configure_files(temp_path, out_path.join("binding_libretro.rs"));
 }
 
 fn main() {
-    let out_path = PathBuf::from("./src/binding");
-    core_bindings(&out_path);
-    libretro_tool(&out_path);
+
+    core_bindings();
+    libretro_tool();
 }

@@ -4,7 +4,6 @@ use crate::{
         retro_core_options_v2_intl,
     },
     constants,
-    retro_context::RetroContext,
     tools::mutex_tools::get_string_mutex_from_ptr,
 };
 use std::{
@@ -13,6 +12,7 @@ use std::{
     path::PathBuf,
     sync::{Arc, Mutex},
 };
+use crate::core::CoreWrapper;
 
 pub struct Values {
     pub value: Mutex<String>,
@@ -58,7 +58,7 @@ impl OptionManager {
     }
 }
 
-fn change_value_selected(ctx: &Arc<RetroContext>, opt_key: &str, new_value_selected: &str) {
+fn change_value_selected(ctx: &Arc<CoreWrapper>, opt_key: &str, new_value_selected: &str) {
     for opt in &*ctx.options.opts.lock().unwrap() {
         if opt.key.lock().unwrap().eq(opt_key) {
             for v in &*opt.values.lock().unwrap() {
@@ -74,12 +74,12 @@ fn change_value_selected(ctx: &Arc<RetroContext>, opt_key: &str, new_value_selec
     }
 }
 
-pub fn update_opt(ctx: &Arc<RetroContext>, opt_key: &str, new_value_selected: &str) {
+pub fn update_opt(ctx: &Arc<CoreWrapper>, opt_key: &str, new_value_selected: &str) {
     change_value_selected(ctx, opt_key, new_value_selected);
     write_all_options_in_file(ctx);
 }
 
-pub fn change_visibility(ctx: &Arc<RetroContext>, key: &str, visibility: bool) {
+pub fn change_visibility(ctx: &Arc<CoreWrapper>, key: &str, visibility: bool) {
     for opt in &mut *ctx.options.opts.lock().unwrap() {
         if opt.key.lock().unwrap().eq(key) {
             *opt.visibility.lock().unwrap() = visibility;
@@ -87,7 +87,7 @@ pub fn change_visibility(ctx: &Arc<RetroContext>, key: &str, visibility: bool) {
     }
 }
 
-fn write_all_options_in_file(ctx: &Arc<RetroContext>) {
+fn write_all_options_in_file(ctx: &Arc<CoreWrapper>) {
     let file_path = ctx.options.file_path.lock().unwrap().clone();
     let mut file = File::create(file_path.clone()).unwrap();
 
@@ -101,7 +101,7 @@ fn write_all_options_in_file(ctx: &Arc<RetroContext>) {
     }
 }
 
-fn load_all_option_in_file(ctx: &Arc<RetroContext>) {
+fn load_all_option_in_file(ctx: &Arc<CoreWrapper>) {
     let file_path = ctx.options.file_path.lock().unwrap().clone();
 
     let mut file = File::open(file_path).unwrap();
@@ -131,7 +131,7 @@ fn load_all_option_in_file(ctx: &Arc<RetroContext>) {
 }
 
 //TODO: adiciona um meio do usuário saber se ocorrer um erro ao tentar salva ou ler o arquivo
-pub fn try_reload_pref_option(ctx: &Arc<RetroContext>) {
+pub fn try_reload_pref_option(ctx: &Arc<CoreWrapper>) {
     let file_path = ctx.options.file_path.lock().unwrap().clone();
 
     //se o arquivo ainda nao existe apenas
@@ -147,7 +147,7 @@ pub fn try_reload_pref_option(ctx: &Arc<RetroContext>) {
 //=================v2_intl=======================
 //===============================================
 
-fn get_v2_intl_category(categories: *mut retro_core_option_v2_category, ctx: &Arc<RetroContext>) {
+fn get_v2_intl_category(categories: *mut retro_core_option_v2_category, ctx: &Arc<CoreWrapper>) {
     let categories = unsafe {
         *(categories as *mut [retro_core_option_v2_category; constants::MAX_CORE_OPTIONS])
     };
@@ -171,7 +171,7 @@ fn get_v2_intl_category(categories: *mut retro_core_option_v2_category, ctx: &Ar
 
 fn get_v2_intl_definitions(
     definitions: *mut retro_core_option_v2_definition,
-    ctx: &Arc<RetroContext>,
+    ctx: &Arc<CoreWrapper>,
 ) {
     let definitions = unsafe { *(definitions as *mut [retro_core_option_v2_definition; 90]) };
 
@@ -214,7 +214,7 @@ fn get_v2_intl_definitions(
     }
 }
 
-pub fn convert_option_v2_intl(option_intl_v2: retro_core_options_v2_intl, ctx: &Arc<RetroContext>) {
+pub fn convert_option_v2_intl(option_intl_v2: retro_core_options_v2_intl, ctx: &Arc<CoreWrapper>) {
     unsafe {
         if option_intl_v2.local.is_null() {
             let us: retro_core_options_v2 = *(option_intl_v2.us);

@@ -1,10 +1,9 @@
-use std::sync::Mutex;
-
 use crate::{
     binding::binding_libretro::{retro_controller_description, retro_controller_info},
     constants::MAX_CORE_CONTROLLER_INFO_TYPES,
     tools::ffi_tools::get_str_from_ptr,
 };
+use std::sync::Mutex;
 
 #[derive(Default)]
 pub struct ControllerDescription {

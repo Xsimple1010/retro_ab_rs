@@ -1,3 +1,7 @@
+use ::std::os::raw;
+use std::{os::raw::c_void, ptr::addr_of, sync::Arc};
+
+use crate::core::CoreWrapper;
 use crate::{
     av_info,
     binding::{
@@ -22,7 +26,6 @@ use crate::{
     constants::{self, MAX_CORE_SUBSYSTEM_INFO},
     controller_info,
     managers::option_manager,
-    retro_context::RetroContext,
     // retro_perf::{
     //     core_get_perf_counter, core_perf_log, core_perf_register, core_perf_start, core_perf_stop,
     //     get_cpu_features, get_features_get_time_usec,
@@ -34,14 +37,8 @@ use crate::{
         RETRO_ENVIRONMENT_GET_RUMBLE_INTERFACE, RETRO_ENVIRONMENT_GET_VFS_INTERFACE,
         RETRO_ENVIRONMENT_SET_DISK_CONTROL_INTERFACE, RETRO_ENVIRONMENT_SET_SERIALIZATION_QUIRKS,
     },
-    system,
-    tools::{
-        self,
-        ffi_tools::{get_str_from_ptr, make_c_string},
-    },
+    tools::ffi_tools::{get_str_from_ptr, make_c_string},
 };
-use ::std::os::raw;
-use std::{os::raw::c_void, ptr::addr_of, sync::Arc};
 
 #[derive(Clone, Copy)]
 pub struct RetroEnvCallbacks {
@@ -50,13 +47,12 @@ pub struct RetroEnvCallbacks {
     pub audio_sample_batch_callback: fn(data: *const i16, frames: usize) -> usize,
     pub input_poll_callback: fn(),
     pub input_state_callback: fn(port: i16, device: i16, index: i16, id: i16) -> i16,
-    pub rumble_callback:
-        fn(port: ::std::os::raw::c_uint, effect: retro_rumble_effect, strength: u16) -> bool,
+    pub rumble_callback: fn(port: raw::c_uint, effect: retro_rumble_effect, strength: u16) -> bool,
 }
 
-static mut CONTEXT: Option<Arc<RetroContext>> = None;
+static mut CONTEXT: Option<Arc<CoreWrapper>> = None;
 
-pub fn configure(context: Arc<RetroContext>) {
+pub fn configure(context: Arc<CoreWrapper>) {
     unsafe {
         CONTEXT = Some(context);
     }
@@ -106,7 +102,7 @@ pub unsafe extern "C" fn input_state_callback(
 }
 
 pub unsafe extern "C" fn video_refresh_callback(
-    _data: *const raw::c_void,
+    _data: *const c_void,
     _width: raw::c_uint,
     _height: raw::c_uint,
     _pitch: usize,
@@ -120,7 +116,7 @@ pub unsafe extern "C" fn video_refresh_callback(
 }
 
 unsafe extern "C" fn rumble_callback(
-    port: ::std::os::raw::c_uint,
+    port: raw::c_uint,
     effect: retro_rumble_effect,
     strength: u16,
 ) -> bool {
@@ -130,14 +126,11 @@ unsafe extern "C" fn rumble_callback(
     }
 }
 
-unsafe extern "C" fn core_log(level: retro_log_level, log: *const ::std::os::raw::c_char) {
+unsafe extern "C" fn core_log(level: retro_log_level, log: *const raw::c_char) {
     println!("[{:?}]: {:?}", level, get_str_from_ptr(log));
 }
 
-pub unsafe extern "C" fn core_environment(
-    cmd: ::std::os::raw::c_uint,
-    _data: *mut raw::c_void,
-) -> bool {
+pub unsafe extern "C" fn core_environment(cmd: raw::c_uint, _data: *mut c_void) -> bool {
     match cmd {
         RETRO_ENVIRONMENT_SET_SUPPORT_NO_GAME => {
             #[cfg(feature = "core_logs")]
@@ -145,7 +138,7 @@ pub unsafe extern "C" fn core_environment(
 
             match &*addr_of!(CONTEXT) {
                 Some(ctx) => {
-                    *ctx.core.support_no_game.lock().unwrap() = *(_data as *mut bool);
+                    *ctx.support_no_game.lock().unwrap() = *(_data as *mut bool);
                 }
                 None => return false,
             }
@@ -222,7 +215,7 @@ pub unsafe extern "C" fn core_environment(
 
                     option_manager::change_visibility(
                         ctx,
-                        tools::ffi_tools::get_str_from_ptr(option.key).as_str(),
+                        get_str_from_ptr(option.key).as_str(),
                         option.visible,
                     )
                 }
@@ -241,7 +234,7 @@ pub unsafe extern "C" fn core_environment(
             *(_data as *mut retro_language) = retro_language::RETRO_LANGUAGE_ENGLISH;
             match &*addr_of!(CONTEXT) {
                 Some(ctx) => {
-                    *ctx.core.language.lock().unwrap() = *(_data as *mut retro_language);
+                    *ctx.language.lock().unwrap() = *(_data as *mut retro_language);
                 }
                 None => return false,
             }
@@ -271,7 +264,7 @@ pub unsafe extern "C" fn core_environment(
 
             match &*addr_of!(CONTEXT) {
                 Some(ctx) => {
-                    *ctx.core.av_info.video.pixel_format.lock().unwrap() =
+                    *ctx.av_info.video.pixel_format.lock().unwrap() =
                         *(_data as *mut retro_pixel_format);
                 }
                 None => return false,
@@ -359,7 +352,7 @@ pub unsafe extern "C" fn core_environment(
                     let raw_subsystem =
                         *(_data as *mut [retro_subsystem_info; MAX_CORE_SUBSYSTEM_INFO]);
 
-                    system::get_subsystem(ctx, raw_subsystem);
+                    ctx.system.get_subsystem(raw_subsystem)
                 }
                 None => return false,
             }
@@ -380,14 +373,14 @@ pub unsafe extern "C" fn core_environment(
                     let raw_ctr_infos = *(_data
                         as *mut [retro_controller_info; constants::MAX_CORE_CONTROLLER_INFO_TYPES]);
 
-                    ctx.core.system.ports.lock().unwrap().clear();
+                    ctx.system.ports.lock().unwrap().clear();
 
                     for raw_ctr_info in raw_ctr_infos {
                         if raw_ctr_info.num_types != 0 {
                             let controller_info =
                                 controller_info::get_controller_info(raw_ctr_info);
 
-                            ctx.core.system.ports.lock().unwrap().push(controller_info);
+                            ctx.system.ports.lock().unwrap().push(controller_info);
                         } else {
                             break;
                         }
@@ -458,7 +451,6 @@ pub unsafe extern "C" fn core_environment(
 }
 
 //TODO: novos teste para "fn core_environment"
-// #[cfg(test)]
 #[cfg(test)]
 mod test_environment {
     use std::{ffi::c_void, ptr::addr_of};
@@ -475,7 +467,7 @@ mod test_environment {
     use super::core_environment;
 
     fn cfg_test() {
-        let ctx = test_tools::context::get_context(test_tools::core::get_raw().unwrap());
+        let ctx = test_tools::core::get_core_wrapper();
         configure(ctx);
     }
 
@@ -495,7 +487,7 @@ mod test_environment {
     fn pixel_format() {
         cfg_test();
         let pixel = retro_pixel_format::RETRO_PIXEL_FORMAT_RGB565;
-        let data = &pixel as *const retro_pixel_format as *mut std::ffi::c_void;
+        let data = &pixel as *const retro_pixel_format as *mut c_void;
 
         let result = unsafe { core_environment(RETRO_ENVIRONMENT_SET_PIXEL_FORMAT, data) };
 
@@ -508,11 +500,11 @@ mod test_environment {
         unsafe {
             match &*addr_of!(CONTEXT) {
                 Some(ctx) => assert_eq!(
-                    *ctx.core.av_info.video.pixel_format.lock().unwrap(),
+                    *ctx.av_info.video.pixel_format.lock().unwrap(),
                     pixel,
                     "returno inesperado: valor desejado -> {:?}; valor recebido -> {:?}",
                     pixel,
-                    *ctx.core.av_info.video.pixel_format.lock().unwrap()
+                    *ctx.av_info.video.pixel_format.lock().unwrap()
                 ),
                 _ => panic!("contexto nao foi encontrado"),
             }

@@ -1,157 +1,101 @@
-use std::{path::PathBuf, sync::Arc};
-
+use std::ptr::addr_of;
+use std::sync::Arc;
 use uuid::Uuid;
-
 use crate::{
-    binding::binding_libretro::LibretroRaw, core::CoreWrapper, environment::RetroEnvCallbacks,
-    managers::option_manager::OptionManager, paths::Paths, system,
+    core::CoreWrapper, environment::RetroEnvCallbacks,
+    paths::Paths,
 };
+use crate::erro_handle::ErroHandle;
+
+static mut CONTEXTS: Vec<Arc<RetroContext>> = Vec::new();
 
 // #[derive(Debug, PartialEq, Eq)]
 pub struct RetroContext {
     pub id: Uuid,
-    pub core: CoreWrapper,
-    pub callbacks: RetroEnvCallbacks,
-    pub options: OptionManager,
-    pub paths: Paths,
+    pub core: Arc<CoreWrapper>,
 }
 
-static mut CONTEXTS: Vec<Arc<RetroContext>> = Vec::new();
+impl Drop for RetroContext {
+    fn drop(&mut self) {
+        let _ = self.delete();
+    }
+}
 
-pub fn delete(ctx_to_delete: Arc<RetroContext>) {
-    unsafe {
-        let position = CONTEXTS.partition_point(|ctx| ctx.id == ctx_to_delete.id);
+impl RetroContext {
+    pub fn new(path: &str,
+               paths: Paths,
+               callbacks: RetroEnvCallbacks) -> Result<Arc<RetroContext>, ErroHandle> {
+        let context = Arc::new(RetroContext {
+            id: Uuid::new_v4(),
+            core: CoreWrapper::new(path, paths.clone(), callbacks),
+        });
 
-        if !CONTEXTS.is_empty() {
-            CONTEXTS.remove(position - 1);
+        context.core.init()?;
+
+        unsafe {
+            CONTEXTS.push(Arc::clone(&context));
         }
-    };
-}
 
-pub fn get_num_context() -> usize {
-    unsafe { CONTEXTS.len() }
-}
-
-fn create_id() -> Uuid {
-    Uuid::new_v4()
-}
-
-pub fn create(raw: LibretroRaw, paths: Paths, callbacks: RetroEnvCallbacks) -> Arc<RetroContext> {
-    let sys_info = system::get_sys_info(&raw);
-
-    let options = OptionManager::new(
-        PathBuf::from(paths.opt.clone())
-            .join(sys_info.library_name.lock().unwrap().to_owned() + ".opt"),
-    );
-
-    let context = Arc::new(RetroContext {
-        id: create_id(),
-        core: CoreWrapper::new(raw),
-        callbacks,
-        options,
-        paths,
-    });
-
-    sys_info
-        .library_name
-        .lock()
-        .unwrap()
-        .clone_into(&mut context.core.system.info.library_name.lock().unwrap());
-
-    context
-        .core
-        .system
-        .info
-        .library_version
-        .lock()
-        .unwrap()
-        .clone_from(&sys_info.library_version.lock().unwrap());
-
-    context
-        .core
-        .system
-        .info
-        .valid_extensions
-        .lock()
-        .unwrap()
-        .clone_from(&sys_info.valid_extensions.lock().unwrap());
-
-    sys_info
-        .need_fullpath
-        .lock()
-        .unwrap()
-        .clone_into(&mut context.core.system.info.need_fullpath.lock().unwrap());
-
-    sys_info
-        .block_extract
-        .lock()
-        .unwrap()
-        .clone_into(&mut context.core.system.info.block_extract.lock().unwrap());
-
-    unsafe {
-        CONTEXTS.push(Arc::clone(&context));
+        Ok(context)
     }
 
-    context
-}
-
-#[cfg(test)]
-mod retro_context {
-    use libloading::Error;
-    use std::{ptr::addr_of, sync::Arc};
-    use uuid::Uuid;
-
-    use crate::{retro_context, test_tools};
-
-    use super::{RetroContext, CONTEXTS};
-
-    fn create_ctx() -> Result<Arc<RetroContext>, Error> {
-        let raw_result = test_tools::core::get_raw();
-
-        match raw_result {
-            Ok(raw) => {
-                let ctx = retro_context::create(
-                    raw,
-                    test_tools::paths::get_paths(),
-                    test_tools::core::get_callbacks(),
-                );
-
-                Ok(ctx)
-            }
-            Err(e) => Err(e),
-        }
-    }
-
-    fn has_initialized(id: Uuid) -> bool {
-        let mut has_initialized = false;
+    pub fn is_valid(&self) -> bool {
+        let mut is_valide = false;
 
         unsafe {
             for ctx in &*addr_of!(CONTEXTS) {
-                if ctx.id == id {
-                    has_initialized = true;
+                if ctx.id == self.id {
+                    is_valide = true;
+                    break;
                 }
             }
         }
 
-        has_initialized
+        is_valide
     }
 
+    pub fn delete(&self) -> Result<(), ErroHandle> {
+        unsafe {
+            let position = CONTEXTS.partition_point(|ctx| ctx.id == self.id);
+
+            if !CONTEXTS.is_empty() {
+                CONTEXTS.remove(position - 1);
+            }
+        };
+
+        self.core.de_init()?;
+
+        Ok(())
+    }
+
+    pub fn get_num_contexts() -> usize {
+        unsafe { CONTEXTS.len() }
+    }
+}
+
+
+#[cfg(test)]
+mod retro_context {
+    use crate::erro_handle::ErroHandle;
+    use crate::test_tools::context::get_context;
+
     #[test]
-    fn test_create_and_delete() -> Result<(), Error> {
-        let ctx = create_ctx()?;
+    fn test_create_and_delete() -> Result<(), ErroHandle> {
+        let ctx = get_context()?;
 
         assert_eq!(
-            has_initialized(ctx.id),
+            ctx.is_valid(),
             true,
             "O contexto id -> {:?} nao foi inicializado!",
             ctx.id
         );
 
         let current_id = ctx.id.clone();
-        retro_context::delete(ctx);
+
+        ctx.delete()?;
 
         assert_eq!(
-            has_initialized(current_id),
+            ctx.is_valid(),
             false,
             "O contexto id -> {:?} nao foi removido!",
             current_id

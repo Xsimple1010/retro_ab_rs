@@ -1,4 +1,4 @@
-use std::sync::{Arc, Mutex};
+use std::sync::Mutex;
 
 use crate::{
     binding::binding_libretro::{
@@ -7,7 +7,6 @@ use crate::{
     },
     constants::{MAX_CORE_SUBSYSTEM_INFO, MAX_CORE_SUBSYSTEM_ROM_INFO},
     controller_info::ControllerInfo,
-    core::RetroContext,
     tools::{ffi_tools::get_str_from_ptr, mutex_tools::get_string_mutex_from_ptr},
 };
 
@@ -45,109 +44,108 @@ pub struct SubSystemInfo {
     pub roms: Mutex<Vec<SubSystemRomInfo>>,
 }
 
-#[derive(Default)]
+// #[derive(Default)]
 pub struct System {
     pub ports: Mutex<Vec<ControllerInfo>>,
     pub info: SysInfo,
     pub subsystem: Mutex<Vec<SubSystemInfo>>,
 }
 
-pub fn get_sys_info(raw: &LibretroRaw) -> SysInfo {
-    unsafe {
-        let sys_info = &mut retro_system_info {
-            block_extract: false,
-            need_fullpath: false,
-            library_name: "".as_ptr() as *const i8,
-            library_version: "".as_ptr() as *const i8,
-            valid_extensions: "".as_ptr() as *const i8,
-        };
-
-        raw.retro_get_system_info(sys_info);
-
-        SysInfo {
-            library_name: Mutex::new(get_str_from_ptr(sys_info.library_name)),
-            library_version: Mutex::new(get_str_from_ptr(sys_info.library_version)),
-            valid_extensions: Mutex::new(get_str_from_ptr(sys_info.valid_extensions)),
-            need_fullpath: Mutex::new(sys_info.need_fullpath),
-            block_extract: Mutex::new(sys_info.block_extract),
-        }
-    }
-}
-
-pub fn get_subsystem(
-    ctx: &Arc<RetroContext>,
-    raw_subsystem: [retro_subsystem_info; MAX_CORE_SUBSYSTEM_INFO],
-) {
-    for raw_sys in raw_subsystem {
-        if !raw_sys.ident.is_null() {
-            let subsystem = SubSystemInfo::default();
-
-            *subsystem.id.lock().unwrap() = raw_sys.id;
-            *subsystem.desc.lock().unwrap() = get_str_from_ptr(raw_sys.desc);
-            *subsystem.ident.lock().unwrap() = get_str_from_ptr(raw_sys.ident);
-
-            let roms = unsafe {
-                *(raw_sys.roms as *mut [retro_subsystem_rom_info; MAX_CORE_SUBSYSTEM_ROM_INFO])
+impl System {
+    pub fn new(raw: &LibretroRaw) -> Self {
+        unsafe {
+            let sys_info = &mut retro_system_info {
+                block_extract: false,
+                need_fullpath: false,
+                library_name: "".as_ptr() as *const i8,
+                library_version: "".as_ptr() as *const i8,
+                valid_extensions: "".as_ptr() as *const i8,
             };
 
-            for index in 0..raw_sys.num_roms {
-                let rom = roms[index as usize];
+            raw.retro_get_system_info(sys_info);
 
-                let memory = unsafe { *(rom.memory as *mut retro_subsystem_memory_info) };
-
-                subsystem.roms.lock().unwrap().push(SubSystemRomInfo {
-                    desc: get_string_mutex_from_ptr(rom.desc),
-                    valid_extensions: get_string_mutex_from_ptr(rom.valid_extensions),
-                    need_fullpath: Mutex::new(rom.need_fullpath),
-                    block_extract: Mutex::new(rom.block_extract),
-                    required: Mutex::new(rom.required),
-                    num_memory: Mutex::new(rom.num_memory),
-                    memory: MemoryInfo {
-                        extension: get_string_mutex_from_ptr(memory.extension),
-                        type_: Mutex::new(memory.type_),
-                    },
-                });
+            System {
+                ports: Mutex::new(Vec::new()),
+                subsystem: Mutex::new(Vec::new()),
+                info: SysInfo {
+                    library_name: Mutex::new(get_str_from_ptr(sys_info.library_name)),
+                    library_version: Mutex::new(get_str_from_ptr(sys_info.library_version)),
+                    valid_extensions: Mutex::new(get_str_from_ptr(sys_info.valid_extensions)),
+                    need_fullpath: Mutex::new(sys_info.need_fullpath),
+                    block_extract: Mutex::new(sys_info.block_extract),
+                },
             }
+        }
+    }
 
-            ctx.core.system.subsystem.lock().unwrap().push(subsystem);
-        } else {
-            break;
+    pub fn get_subsystem(&self, raw_subsystem: [retro_subsystem_info; MAX_CORE_SUBSYSTEM_INFO]) {
+        for raw_sys in raw_subsystem {
+            if !raw_sys.ident.is_null() {
+                let subsystem = SubSystemInfo::default();
+
+                *subsystem.id.lock().unwrap() = raw_sys.id;
+                *subsystem.desc.lock().unwrap() = get_str_from_ptr(raw_sys.desc);
+                *subsystem.ident.lock().unwrap() = get_str_from_ptr(raw_sys.ident);
+
+                let roms = unsafe {
+                    *(raw_sys.roms as *mut [retro_subsystem_rom_info; MAX_CORE_SUBSYSTEM_ROM_INFO])
+                };
+
+                for index in 0..raw_sys.num_roms {
+                    let rom = roms[index as usize];
+
+                    let memory = unsafe { *(rom.memory as *mut retro_subsystem_memory_info) };
+
+                    subsystem.roms.lock().unwrap().push(SubSystemRomInfo {
+                        desc: get_string_mutex_from_ptr(rom.desc),
+                        valid_extensions: get_string_mutex_from_ptr(rom.valid_extensions),
+                        need_fullpath: Mutex::new(rom.need_fullpath),
+                        block_extract: Mutex::new(rom.block_extract),
+                        required: Mutex::new(rom.required),
+                        num_memory: Mutex::new(rom.num_memory),
+                        memory: MemoryInfo {
+                            extension: get_string_mutex_from_ptr(memory.extension),
+                            type_: Mutex::new(memory.type_),
+                        },
+                    });
+                }
+
+                self.subsystem.lock().unwrap().push(subsystem);
+            } else {
+                break;
+            }
         }
     }
 }
 
+//
 #[cfg(test)]
 mod test_system {
-    use crate::{system, test_tools};
+    use crate::{system::System, test_tools};
 
     #[test]
     fn test_get_sys_info() {
-        let raw_result = test_tools::core::get_raw();
+        let core = test_tools::core::get_core_wrapper();
 
-        match raw_result {
-            Ok(raw) => {
-                let sys_info = system::get_sys_info(&raw);
+        let sys = System::new(&core.raw);
 
-                assert_eq!(
-                    *sys_info.library_name.lock().unwrap().clone(),
-                    "bsnes".to_owned()
-                );
+        assert_eq!(
+            *sys.info.library_name.lock().unwrap().clone(),
+            "bsnes".to_owned()
+        );
 
-                assert_eq!(
-                    *sys_info.library_version.lock().unwrap().clone(),
-                    "115".to_owned()
-                );
+        assert_eq!(
+            *sys.info.library_version.lock().unwrap().clone(),
+            "115".to_owned()
+        );
 
-                assert_eq!(
-                    *sys_info.valid_extensions.lock().unwrap().clone(),
-                    "smc|sfc|gb|gbc|bs".to_owned()
-                );
+        assert_eq!(
+            *sys.info.valid_extensions.lock().unwrap().clone(),
+            "smc|sfc|gb|gbc|bs".to_owned()
+        );
 
-                assert_eq!(*sys_info.block_extract.lock().unwrap(), false);
+        assert_eq!(*sys.info.block_extract.lock().unwrap(), false);
 
-                assert_eq!(*sys_info.need_fullpath.lock().unwrap(), true);
-            }
-            _ => {}
-        }
+        assert_eq!(*sys.info.need_fullpath.lock().unwrap(), true);
     }
 }

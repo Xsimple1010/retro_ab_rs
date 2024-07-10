@@ -7,10 +7,10 @@ mod constants;
 mod controller_info;
 mod environment;
 mod managers;
-mod retro_context;
 // mod retro_perf;
 mod tools;
 
+pub mod retro_context;
 pub mod core;
 pub mod erro_handle;
 pub mod paths;

@@ -1,1 +1,1 @@
-pub const CORE_TEST_RELATIVE_PATH: &str = "cores/test.so";
+pub const CORE_TEST_RELATIVE_PATH: &str = "cores/test.dll";

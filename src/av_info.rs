@@ -1,10 +1,9 @@
-use std::sync::{Arc, Mutex};
+use std::sync::Mutex;
 
+use crate::core::CoreWrapper;
 use crate::{
-    binding::binding_libretro::{
-        retro_game_geometry, retro_system_av_info, retro_system_timing, LibretroRaw,
-    },
-    core::{retro_pixel_format, RetroContext},
+    binding::binding_libretro::{retro_game_geometry, retro_system_av_info, retro_system_timing},
+    core::retro_pixel_format,
 };
 
 #[derive(Default)]
@@ -59,13 +58,13 @@ pub struct AvInfo {
     pub timing: Timing,
 }
 
-pub fn try_set_new_geometry(ctx: &Arc<RetroContext>, raw_geometry_ptr: *const retro_game_geometry) {
+pub fn try_set_new_geometry(ctx: &CoreWrapper, raw_geometry_ptr: *const retro_game_geometry) {
     if raw_geometry_ptr.is_null() {
         return;
     }
 
     let raw_geometry = unsafe { *raw_geometry_ptr };
-    let geometry_ctx = &ctx.core.av_info.video.geometry;
+    let geometry_ctx = &ctx.av_info.video.geometry;
 
     if raw_geometry.aspect_ratio != *geometry_ctx.aspect_ratio.lock().unwrap()
         || raw_geometry.base_height != *geometry_ctx.base_height.lock().unwrap()
@@ -79,22 +78,20 @@ pub fn try_set_new_geometry(ctx: &Arc<RetroContext>, raw_geometry_ptr: *const re
     }
 }
 
-fn _set_timing(ctx: &Arc<RetroContext>, raw_system_timing: *const retro_system_timing) {
+fn _set_timing(ctx: &CoreWrapper, raw_system_timing: *const retro_system_timing) {
     if raw_system_timing.is_null() {
         return;
     }
 
     let timing = unsafe { *raw_system_timing };
 
-    *ctx.core
-        .av_info
+    *ctx.av_info
         .timing
         .fps
         .lock()
         .expect("Nao foi possível definir um novo valor para timing.fps") = timing.fps;
 
-    *ctx.core
-        .av_info
+    *ctx.av_info
         .timing
         .sample_rate
         .lock()
@@ -102,7 +99,7 @@ fn _set_timing(ctx: &Arc<RetroContext>, raw_system_timing: *const retro_system_t
         timing.sample_rate;
 }
 
-pub fn update_av_info(ctx: &Arc<RetroContext>, raw: &LibretroRaw) {
+pub fn update_av_info(ctx: &CoreWrapper) {
     let mut raw_av_info = retro_system_av_info {
         geometry: retro_game_geometry {
             aspect_ratio: 0.0,
@@ -118,9 +115,9 @@ pub fn update_av_info(ctx: &Arc<RetroContext>, raw: &LibretroRaw) {
     };
 
     unsafe {
-        raw.retro_get_system_av_info(&mut raw_av_info);
+        ctx.raw.retro_get_system_av_info(&mut raw_av_info);
     }
 
-    try_set_new_geometry(ctx, &mut raw_av_info.geometry);
-    _set_timing(ctx, &mut raw_av_info.timing);
+    try_set_new_geometry(ctx, &raw_av_info.geometry);
+    _set_timing(ctx, &raw_av_info.timing);
 }

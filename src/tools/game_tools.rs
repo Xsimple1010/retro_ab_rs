@@ -4,15 +4,16 @@ use std::{
     io::Read,
     os::raw::c_void,
     path::{Path, PathBuf},
-    ptr::null,
-    sync::Arc,
+    ptr::null
+    ,
 };
 
 use crate::{
-    binding::binding_libretro::{retro_game_info, LibretroRaw},
-    core::RetroContext,
+    binding::binding_libretro::retro_game_info
+    ,
     erro_handle::{ErroHandle, RetroLogLevel},
 };
+use crate::core::CoreWrapper;
 
 use super::ffi_tools::make_c_string;
 
@@ -26,8 +27,8 @@ fn get_full_path(path: &str) -> Result<PathBuf, ErroHandle> {
     }
 }
 
-fn valid_rom_extension(ctx: &Arc<RetroContext>, path: &Path) -> Result<(), ErroHandle> {
-    let valid_extensions = ctx.core.system.info.valid_extensions.lock().unwrap();
+fn valid_rom_extension(ctx: &CoreWrapper, path: &Path) -> Result<(), ErroHandle> {
+    let valid_extensions = ctx.system.info.valid_extensions.lock().unwrap();
     let path_str = path.extension().unwrap().to_str().unwrap();
 
     if !valid_extensions.contains(path_str) {
@@ -44,8 +45,7 @@ fn valid_rom_extension(ctx: &Arc<RetroContext>, path: &Path) -> Result<(), ErroH
 }
 
 pub fn create_game_info(
-    ctx: &Arc<RetroContext>,
-    raw: &LibretroRaw,
+    ctx: &CoreWrapper,
     path: &str,
 ) -> Result<bool, ErroHandle> {
     let f_path = get_full_path(path)?;
@@ -57,7 +57,7 @@ pub fn create_game_info(
     let path = make_c_string(f_path.to_str().unwrap())?;
     let mut size = 0;
 
-    let need_full_path = *ctx.core.system.info.need_fullpath.lock().unwrap();
+    let need_full_path = *ctx.system.info.need_fullpath.lock().unwrap();
 
     if !need_full_path {
         let mut file = File::open(f_path).unwrap();
@@ -81,7 +81,7 @@ pub fn create_game_info(
         size,
     };
 
-    let state = unsafe { raw.retro_load_game(&game_info) };
+    let state = unsafe { ctx.raw.retro_load_game(&game_info) };
 
     Ok(state)
 }

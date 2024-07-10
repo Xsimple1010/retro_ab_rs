@@ -1,7 +1,9 @@
+use std::sync::Arc;
 use super::constants::CORE_TEST_RELATIVE_PATH;
-use crate::binding::binding_libretro::LibretroRaw;
+use crate::core::CoreWrapper;
 use crate::environment::RetroEnvCallbacks;
 use crate::retro_sys::retro_rumble_effect;
+use crate::test_tools::paths::get_paths;
 
 fn audio_sample_callback(_left: i16, _right: i16) {}
 
@@ -18,7 +20,7 @@ fn input_state_callback(_port: i16, _device: i16, _index: i16, _id: i16) -> i16 
 }
 
 fn video_refresh_callback(
-    _data: *const ::std::os::raw::c_void,
+    _data: *const std::os::raw::c_void,
     _width: u32,
     _height: u32,
     _pitch: usize,
@@ -27,7 +29,7 @@ fn video_refresh_callback(
 }
 
 fn rumble_callback(
-    port: ::std::os::raw::c_uint,
+    port: std::os::raw::c_uint,
     effect: retro_rumble_effect,
     strength: u16,
 ) -> bool {
@@ -50,6 +52,13 @@ pub fn get_callbacks() -> RetroEnvCallbacks {
     }
 }
 
-pub fn get_raw() -> Result<LibretroRaw, libloading::Error> {
-    unsafe { LibretroRaw::new(CORE_TEST_RELATIVE_PATH) }
+pub fn get_core_wrapper() -> Arc<CoreWrapper> {
+    CoreWrapper::new(CORE_TEST_RELATIVE_PATH, get_paths(), RetroEnvCallbacks {
+        audio_sample_callback,
+        audio_sample_batch_callback,
+        input_poll_callback,
+        input_state_callback,
+        rumble_callback,
+        video_refresh_callback,
+    })
 }

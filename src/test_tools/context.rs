@@ -1,9 +1,9 @@
 use std::sync::Arc;
-
-use crate::{binding::binding_libretro::LibretroRaw, core::RetroContext, retro_context};
-
+use crate::erro_handle::ErroHandle;
+use crate::retro_context::RetroContext;
+use crate::test_tools::constants::CORE_TEST_RELATIVE_PATH;
 use super::{core, paths};
 
-pub fn get_context(raw: LibretroRaw) -> Arc<RetroContext> {
-    retro_context::create(raw, paths::get_paths(), core::get_callbacks())
+pub fn get_context() -> Result<Arc<RetroContext>, ErroHandle> {
+    RetroContext::new(CORE_TEST_RELATIVE_PATH, paths::get_paths(), core::get_callbacks())
 }
