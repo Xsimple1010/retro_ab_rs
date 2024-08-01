@@ -10,33 +10,33 @@ use crate::{
     tools::{ffi_tools::get_str_from_ptr, mutex_tools::get_string_mutex_from_ptr},
 };
 
-#[derive(Default)]
+#[derive(Default, Debug)]
 pub struct SysInfo {
     pub library_name: Mutex<String>,
     pub library_version: Mutex<String>,
     pub valid_extensions: Mutex<String>,
-    pub need_fullpath: Mutex<bool>,
+    pub need_full_path: Mutex<bool>,
     pub block_extract: Mutex<bool>,
 }
 
-#[derive(Default)]
+#[derive(Default, Debug)]
 pub struct MemoryInfo {
     pub extension: Mutex<String>,
     pub type_: Mutex<u32>,
 }
 
-#[derive(Default)]
+#[derive(Default, Debug)]
 pub struct SubSystemRomInfo {
     pub desc: Mutex<String>,
     pub valid_extensions: Mutex<String>,
-    pub need_fullpath: Mutex<bool>,
+    pub need_full_path: Mutex<bool>,
     pub block_extract: Mutex<bool>,
     pub required: Mutex<bool>,
     pub memory: MemoryInfo,
     pub num_memory: Mutex<u32>,
 }
 
-#[derive(Default)]
+#[derive(Default, Debug)]
 pub struct SubSystemInfo {
     pub id: Mutex<u32>,
     pub desc: Mutex<String>,
@@ -44,7 +44,7 @@ pub struct SubSystemInfo {
     pub roms: Mutex<Vec<SubSystemRomInfo>>,
 }
 
-// #[derive(Default)]
+#[derive(Debug)]
 pub struct System {
     pub ports: Mutex<Vec<ControllerInfo>>,
     pub info: SysInfo,
@@ -71,7 +71,7 @@ impl System {
                     library_name: Mutex::new(get_str_from_ptr(sys_info.library_name)),
                     library_version: Mutex::new(get_str_from_ptr(sys_info.library_version)),
                     valid_extensions: Mutex::new(get_str_from_ptr(sys_info.valid_extensions)),
-                    need_fullpath: Mutex::new(sys_info.need_fullpath),
+                    need_full_path: Mutex::new(sys_info.need_fullpath),
                     block_extract: Mutex::new(sys_info.block_extract),
                 },
             }
@@ -99,7 +99,7 @@ impl System {
                     subsystem.roms.lock().unwrap().push(SubSystemRomInfo {
                         desc: get_string_mutex_from_ptr(rom.desc),
                         valid_extensions: get_string_mutex_from_ptr(rom.valid_extensions),
-                        need_fullpath: Mutex::new(rom.need_fullpath),
+                        need_full_path: Mutex::new(rom.need_fullpath),
                         block_extract: Mutex::new(rom.block_extract),
                         required: Mutex::new(rom.required),
                         num_memory: Mutex::new(rom.num_memory),
@@ -146,6 +146,6 @@ mod test_system {
 
         assert_eq!(*sys.info.block_extract.lock().unwrap(), false);
 
-        assert_eq!(*sys.info.need_fullpath.lock().unwrap(), true);
+        assert_eq!(*sys.info.need_full_path.lock().unwrap(), true);
     }
 }

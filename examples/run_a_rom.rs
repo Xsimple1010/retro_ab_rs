@@ -5,12 +5,14 @@ use std::{env, sync::Arc};
 
 fn main() -> Result<(), ErroHandle> {
     let value = retro_ab::args_manager::get_values(env::args().collect());
+
     let mut context: Option<Arc<RetroContext>> = None;
+
     match value.get_key_value("core") {
         Some((_, value)) => {
             context = Some(RetroContext::new(
                 value,
-                test_tools::paths::get_paths(),
+                test_tools::paths::get_paths()?,
                 test_tools::core::get_callbacks(),
             )?);
         }
@@ -66,7 +68,7 @@ fn main() -> Result<(), ErroHandle> {
             );
             println!(
                 "need_fullpath -> {:?}",
-                ctx.core.system.info.need_fullpath.lock().unwrap()
+                ctx.core.system.info.need_full_path.lock().unwrap()
             );
             println!(
                 "block_extract -> {:?}",
@@ -139,10 +141,10 @@ fn main() -> Result<(), ErroHandle> {
 
                 println!()
             }
+            ctx.delete().unwrap();
         }
         None => {}
     }
 
     Ok(())
-    // context.take();
 }

@@ -4,17 +4,13 @@ use std::{
     io::Read,
     os::raw::c_void,
     path::{Path, PathBuf},
-    ptr::null
-    ,
+    ptr::null,
 };
-
 use crate::{
-    binding::binding_libretro::retro_game_info
-    ,
+    binding::binding_libretro::retro_game_info,
     erro_handle::{ErroHandle, RetroLogLevel},
 };
 use crate::core::CoreWrapper;
-
 use super::ffi_tools::make_c_string;
 
 fn get_full_path(path: &str) -> Result<PathBuf, ErroHandle> {
@@ -57,15 +53,14 @@ pub fn create_game_info(
     let path = make_c_string(f_path.to_str().unwrap())?;
     let mut size = 0;
 
-    let need_full_path = *ctx.system.info.need_fullpath.lock().unwrap();
+    let need_full_path = *ctx.system.info.need_full_path.lock().unwrap();
 
     if !need_full_path {
         let mut file = File::open(f_path).unwrap();
 
-        let len = file.metadata().unwrap().len() as usize;
+        size = file.metadata().unwrap().len() as usize;
 
-        buf = Vec::with_capacity(len);
-        size = len;
+        buf = Vec::with_capacity(size);
 
         file.read_to_end(&mut buf).unwrap();
     }

@@ -1,8 +1,9 @@
 use std::sync::Arc;
-use super::constants::CORE_TEST_RELATIVE_PATH;
+use uuid::Uuid;
 use crate::core::CoreWrapper;
 use crate::environment::RetroEnvCallbacks;
 use crate::retro_sys::retro_rumble_effect;
+use crate::test_tools::constants::CORE_TEST_RELATIVE_PATH;
 use crate::test_tools::paths::get_paths;
 
 fn audio_sample_callback(_left: i16, _right: i16) {}
@@ -52,13 +53,7 @@ pub fn get_callbacks() -> RetroEnvCallbacks {
     }
 }
 
+
 pub fn get_core_wrapper() -> Arc<CoreWrapper> {
-    CoreWrapper::new(CORE_TEST_RELATIVE_PATH, get_paths(), RetroEnvCallbacks {
-        audio_sample_callback,
-        audio_sample_batch_callback,
-        input_poll_callback,
-        input_state_callback,
-        rumble_callback,
-        video_refresh_callback,
-    })
+    CoreWrapper::new(Uuid::new_v4(), CORE_TEST_RELATIVE_PATH, get_paths().unwrap(), get_callbacks()).unwrap()
 }

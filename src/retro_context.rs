@@ -1,33 +1,31 @@
+use crate::erro_handle::ErroHandle;
+use crate::{core::CoreWrapper, environment::RetroEnvCallbacks, paths::Paths};
 use std::ptr::addr_of;
 use std::sync::Arc;
 use uuid::Uuid;
-use crate::{
-    core::CoreWrapper, environment::RetroEnvCallbacks,
-    paths::Paths,
-};
-use crate::erro_handle::ErroHandle;
+use crate::core::CoreWrapperIns;
+use crate::erro_handle::RetroLogLevel;
 
 static mut CONTEXTS: Vec<Arc<RetroContext>> = Vec::new();
 
-// #[derive(Debug, PartialEq, Eq)]
+type RetroCtxIns = Arc<RetroContext>;
+
 pub struct RetroContext {
     pub id: Uuid,
-    pub core: Arc<CoreWrapper>,
-}
-
-impl Drop for RetroContext {
-    fn drop(&mut self) {
-        let _ = self.delete();
-    }
+    pub core: CoreWrapperIns,
 }
 
 impl RetroContext {
-    pub fn new(path: &str,
-               paths: Paths,
-               callbacks: RetroEnvCallbacks) -> Result<Arc<RetroContext>, ErroHandle> {
+    pub fn new(
+        path: &str,
+        paths: Paths,
+        callbacks: RetroEnvCallbacks,
+    ) -> Result<RetroCtxIns, ErroHandle> {
+        let id = Uuid::new_v4();
+
         let context = Arc::new(RetroContext {
-            id: Uuid::new_v4(),
-            core: CoreWrapper::new(path, paths.clone(), callbacks),
+            id,
+            core: CoreWrapper::new(id, path, paths.clone(), callbacks)?,
         });
 
         context.core.init()?;
@@ -44,7 +42,7 @@ impl RetroContext {
 
         unsafe {
             for ctx in &*addr_of!(CONTEXTS) {
-                if ctx.id == self.id {
+                if ctx.id.eq(&self.id) {
                     is_valide = true;
                     break;
                 }
@@ -71,8 +69,39 @@ impl RetroContext {
     pub fn get_num_contexts() -> usize {
         unsafe { CONTEXTS.len() }
     }
-}
 
+    #[doc = "
+        # Pegar uma instância pelo seu id
+
+        Use isso com moderação, pois pode quasar muita confusão no código.
+
+        ```
+        // inicia pelo menos uma instância
+        let ctx = RetroContext::new(core_path, paths, callbacks);
+
+        let same_ctx = RetroContext::get_from_id(&ctx.id)
+
+        if some_ctx.id == ctx.id {
+            println!('same id: {:?}', some_ctx.id);
+        }
+        ```
+    "]
+    pub fn get_from_id(id: &Uuid) -> Result<RetroCtxIns, ErroHandle> {
+        unsafe {
+            for ctx in CONTEXTS.iter() {
+                if ctx.id.eq(id) {
+                    return Ok(ctx.clone());
+                }
+            }
+        }
+
+
+        Err(ErroHandle {
+            message: "O contexto voce esta tentando acessar não existe".to_string(),
+            level: RetroLogLevel::RETRO_LOG_ERROR,
+        })
+    }
+}
 
 #[cfg(test)]
 mod retro_context {

@@ -1,21 +1,25 @@
-use std::path::PathBuf;
 use std::sync::{Arc, Mutex};
-
-pub use managers::option_manager::update_opt;
-
-use crate::av_info::update_av_info;
+use uuid::Uuid;
 pub use crate::av_info::{AvInfo, Geometry, Timing, Video};
 pub use crate::binding::binding_libretro::retro_language;
 pub use crate::binding::binding_libretro::retro_pixel_format;
 pub use crate::environment::RetroEnvCallbacks;
 use crate::erro_handle::{ErroHandle, RetroLogLevel};
-use crate::managers::option_manager::OptionManager;
 use crate::{
-    binding::binding_libretro::LibretroRaw, environment, managers, paths::Paths, system::System,
+    binding::binding_libretro::LibretroRaw, environment, paths::Paths, system::System,
     tools,
+    managers::option_manager::OptionManager,
 };
 
+
+pub type CoreWrapperIns = Arc<CoreWrapper>;
+
 pub struct CoreWrapper {
+    /// # Retro_context_associated
+    ///
+    /// Adicionei isso com o proposito de chamar futuras callbacks que serão adicionadas
+    /// [RetroContext] dentro das callbacks fornecidas por [environment],
+    pub retro_ctx_associated: Uuid,
     pub initialized: Mutex<bool>,
     pub game_loaded: Mutex<bool>,
     pub supports_bitmasks: Mutex<bool>,
@@ -26,19 +30,22 @@ pub struct CoreWrapper {
     pub paths: Paths,
     pub options: OptionManager,
     pub raw: Arc<LibretroRaw>,
-    pub(crate) callbacks: RetroEnvCallbacks,
+    pub callbacks: RetroEnvCallbacks,
+}
+
+impl Drop for CoreWrapper {
+    fn drop(&mut self) {
+        //TODO: descarregar o core aqui!
+    }
 }
 
 impl CoreWrapper {
-    pub fn new(path: &str, paths: Paths, callbacks: RetroEnvCallbacks) -> Arc<CoreWrapper> {
+    pub fn new(retro_ctx_associated: Uuid, path: &str, paths: Paths, callbacks: RetroEnvCallbacks) -> Result<CoreWrapperIns, ErroHandle> {
         let raw = unsafe { LibretroRaw::new(path).unwrap() };
 
         let system = System::new(&raw);
 
-        let options = OptionManager::new(
-            PathBuf::from(paths.opt.clone())
-                .join(system.info.library_name.lock().unwrap().to_owned() + ".opt"),
-        );
+        let options = OptionManager::new(&paths.opt, system.info.library_name.lock().unwrap().clone());
 
         let core = Arc::new(CoreWrapper {
             raw: Arc::new(raw),
@@ -51,6 +58,7 @@ impl CoreWrapper {
             paths,
             options,
             callbacks,
+            retro_ctx_associated,
             //TODO:precisa modificado de acordo com o idioma selecionado no sistema operacional!
             language: Mutex::new(retro_language::RETRO_LANGUAGE_PORTUGUESE_BRAZIL),
         });
@@ -77,7 +85,7 @@ impl CoreWrapper {
                 .retro_set_input_state(Some(environment::input_state_callback));
         }
 
-        core
+        Ok(core)
     }
 
     pub fn init(&self) -> Result<(), ErroHandle> {
@@ -115,7 +123,7 @@ impl CoreWrapper {
         match tools::game_tools::create_game_info(self, path) {
             Ok(state) => {
                 *self.game_loaded.lock().unwrap() = state;
-                update_av_info(self);
+                self.av_info.update_av_info(self);
                 Ok(state)
             }
             Err(e) => Err(e),
@@ -169,12 +177,12 @@ impl CoreWrapper {
             return Err(ErroHandle {
                 level: RetroLogLevel::RETRO_LOG_WARN,
                 message:
-                    "Nao e possível descarrega o núcleo, pois o mesmo ainda nao foi inicializado!"
-                        .to_string(),
+                "Nao e possível descarrega o núcleo, pois o mesmo ainda nao foi inicializado!"
+                    .to_string(),
             });
         }
 
-        //se uma *rom* estive carrega ela deve ser descarregada primeiro
+        //Se uma *rom* estive carrega ela deve ser descarregada primeiro
         match self.unload_game() {
             Ok(..) => {}
             Err(e) => match &e.level {
@@ -184,7 +192,7 @@ impl CoreWrapper {
                         self.raw.retro_deinit();
                     }
                     *self.initialized.lock().unwrap() = false;
-                    environment::delete_local_ctx();
+                    environment::delete_local_core_ctx();
 
                     return Err(e);
                 }
@@ -195,7 +203,7 @@ impl CoreWrapper {
             self.raw.retro_deinit();
         }
         *self.initialized.lock().unwrap() = false;
-        environment::delete_local_ctx();
+        environment::delete_local_core_ctx();
 
         Ok(())
     }
@@ -239,3 +247,6 @@ impl CoreWrapper {
         Ok(())
     }
 }
+
+#[cfg(test)]
+mod core {}

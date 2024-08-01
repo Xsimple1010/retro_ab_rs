@@ -6,7 +6,8 @@ use crate::{
     core::retro_pixel_format,
 };
 
-#[derive(Default)]
+
+#[derive(Default, Debug)]
 pub struct Timing {
     #[doc = "FPS of video content."]
     pub fps: Mutex<f64>,
@@ -14,7 +15,8 @@ pub struct Timing {
     pub sample_rate: Mutex<f64>,
 }
 
-#[derive(Default)]
+
+#[derive(Debug, Default)]
 pub struct Geometry {
     #[doc = "Nominal video width of game."]
     pub base_width: Mutex<u32>,
@@ -36,6 +38,7 @@ pub struct Geometry {
     pub aspect_ratio: Mutex<f32>,
 }
 
+#[derive(Debug)]
 pub struct Video {
     pub can_dupe: Mutex<bool>,
     pub pixel_format: Mutex<retro_pixel_format>,
@@ -52,72 +55,75 @@ impl Default for Video {
     }
 }
 
-#[derive(Default)]
+#[derive(Default, Debug)]
 pub struct AvInfo {
     pub video: Video,
     pub timing: Timing,
 }
 
-pub fn try_set_new_geometry(ctx: &CoreWrapper, raw_geometry_ptr: *const retro_game_geometry) {
-    if raw_geometry_ptr.is_null() {
-        return;
+
+impl AvInfo {
+    pub fn try_set_new_geometry(&self, raw_geometry_ptr: *const retro_game_geometry) {
+        if raw_geometry_ptr.is_null() {
+            return;
+        }
+
+        let raw_geometry = unsafe { *raw_geometry_ptr };
+        let geometry_ctx = &self.video.geometry;
+
+        if raw_geometry.aspect_ratio != *geometry_ctx.aspect_ratio.lock().unwrap()
+            || raw_geometry.base_height != *geometry_ctx.base_height.lock().unwrap()
+            || raw_geometry.base_width != *geometry_ctx.base_width.lock().unwrap()
+        {
+            *geometry_ctx.aspect_ratio.lock().unwrap() = raw_geometry.aspect_ratio;
+            *geometry_ctx.base_height.lock().unwrap() = raw_geometry.base_height;
+            *geometry_ctx.base_width.lock().unwrap() = raw_geometry.base_width;
+            *geometry_ctx.max_height.lock().unwrap() = raw_geometry.max_height;
+            *geometry_ctx.max_width.lock().unwrap() = raw_geometry.max_width;
+        }
     }
 
-    let raw_geometry = unsafe { *raw_geometry_ptr };
-    let geometry_ctx = &ctx.av_info.video.geometry;
+    fn _set_timing(&self, raw_system_timing: *const retro_system_timing) {
+        if raw_system_timing.is_null() {
+            return;
+        }
 
-    if raw_geometry.aspect_ratio != *geometry_ctx.aspect_ratio.lock().unwrap()
-        || raw_geometry.base_height != *geometry_ctx.base_height.lock().unwrap()
-        || raw_geometry.base_width != *geometry_ctx.base_width.lock().unwrap()
-    {
-        *geometry_ctx.aspect_ratio.lock().unwrap() = raw_geometry.aspect_ratio;
-        *geometry_ctx.base_height.lock().unwrap() = raw_geometry.base_height;
-        *geometry_ctx.base_width.lock().unwrap() = raw_geometry.base_width;
-        *geometry_ctx.max_height.lock().unwrap() = raw_geometry.max_height;
-        *geometry_ctx.max_width.lock().unwrap() = raw_geometry.max_width;
-    }
-}
+        let timing = unsafe { *raw_system_timing };
 
-fn _set_timing(ctx: &CoreWrapper, raw_system_timing: *const retro_system_timing) {
-    if raw_system_timing.is_null() {
-        return;
-    }
+        *self
+            .timing
+            .fps
+            .lock()
+            .expect("Nao foi possível definir um novo valor para timing.fps") = timing.fps;
 
-    let timing = unsafe { *raw_system_timing };
-
-    *ctx.av_info
-        .timing
-        .fps
-        .lock()
-        .expect("Nao foi possível definir um novo valor para timing.fps") = timing.fps;
-
-    *ctx.av_info
-        .timing
-        .sample_rate
-        .lock()
-        .expect("Nao foi possível definir um novo valor para timing.sample_rate") =
-        timing.sample_rate;
-}
-
-pub fn update_av_info(ctx: &CoreWrapper) {
-    let mut raw_av_info = retro_system_av_info {
-        geometry: retro_game_geometry {
-            aspect_ratio: 0.0,
-            base_height: 0,
-            base_width: 0,
-            max_height: 0,
-            max_width: 0,
-        },
-        timing: retro_system_timing {
-            fps: 0.0,
-            sample_rate: 0.0,
-        },
-    };
-
-    unsafe {
-        ctx.raw.retro_get_system_av_info(&mut raw_av_info);
+        *self
+            .timing
+            .sample_rate
+            .lock()
+            .expect("Nao foi possível definir um novo valor para timing.sample_rate") =
+            timing.sample_rate;
     }
 
-    try_set_new_geometry(ctx, &raw_av_info.geometry);
-    _set_timing(ctx, &raw_av_info.timing);
+    pub fn update_av_info(&self, ctx: &CoreWrapper) {
+        let mut raw_av_info = retro_system_av_info {
+            geometry: retro_game_geometry {
+                aspect_ratio: 0.0,
+                base_height: 0,
+                base_width: 0,
+                max_height: 0,
+                max_width: 0,
+            },
+            timing: retro_system_timing {
+                fps: 0.0,
+                sample_rate: 0.0,
+            },
+        };
+
+        unsafe {
+            ctx.raw.retro_get_system_av_info(&mut raw_av_info);
+        }
+
+        self.try_set_new_geometry(&raw_av_info.geometry);
+        self._set_timing(&raw_av_info.timing);
+    }
 }
