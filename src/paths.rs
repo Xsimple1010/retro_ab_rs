@@ -1,8 +1,8 @@
+use crate::erro_handle::ErroHandle;
+use crate::erro_handle::RetroLogLevel::RETRO_LOG_ERROR;
 use std::fs;
 use std::ops::Not;
 use std::path::Path;
-use crate::erro_handle::ErroHandle;
-use crate::erro_handle::RetroLogLevel::RETRO_LOG_ERROR;
 
 #[derive(Clone, Debug)]
 pub struct Paths {
@@ -11,11 +11,10 @@ pub struct Paths {
     pub opt: String,
 }
 
-
 impl Paths {
     pub fn new(system: String, save: String, opt: String) -> Result<Self, ErroHandle> {
         if Path::new(&system).exists().not() {
-            if fs::create_dir(&system).is_err() {
+            if fs::create_dir_all(&system).is_err() {
                 return Err(ErroHandle {
                     level: RETRO_LOG_ERROR,
                     message: "Não foi possível criar a pasta system".to_owned(),
@@ -24,7 +23,7 @@ impl Paths {
         }
 
         if Path::new(&save).exists().not() {
-            if fs::create_dir(&save).is_err() {
+            if fs::create_dir_all(&save).is_err() {
                 return Err(ErroHandle {
                     level: RETRO_LOG_ERROR,
                     message: "Não foi possível criar a pasta save".to_owned(),
@@ -33,7 +32,7 @@ impl Paths {
         }
 
         if Path::new(&opt).exists().not() {
-            if fs::create_dir(&opt).is_err() {
+            if fs::create_dir_all(&opt).is_err() {
                 return Err(ErroHandle {
                     level: RETRO_LOG_ERROR,
                     message: "Não foi possível criar a pasta opt".to_owned(),
@@ -41,11 +40,6 @@ impl Paths {
             }
         }
 
-
-        Ok(Paths {
-            system,
-            opt,
-            save,
-        })
+        Ok(Paths { system, opt, save })
     }
 }

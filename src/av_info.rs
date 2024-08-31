@@ -1,11 +1,10 @@
-use std::sync::Mutex;
+use std::sync::{Arc, Mutex};
 
-use crate::core::CoreWrapper;
+use crate::retro_sys::LibretroRaw;
 use crate::{
     binding::binding_libretro::{retro_game_geometry, retro_system_av_info, retro_system_timing},
     core::retro_pixel_format,
 };
-
 
 #[derive(Default, Debug)]
 pub struct Timing {
@@ -14,7 +13,6 @@ pub struct Timing {
     #[doc = "Sampling rate of audio."]
     pub sample_rate: Mutex<f64>,
 }
-
 
 #[derive(Debug, Default)]
 pub struct Geometry {
@@ -61,7 +59,6 @@ pub struct AvInfo {
     pub timing: Timing,
 }
 
-
 impl AvInfo {
     pub fn try_set_new_geometry(&self, raw_geometry_ptr: *const retro_game_geometry) {
         if raw_geometry_ptr.is_null() {
@@ -104,7 +101,7 @@ impl AvInfo {
             timing.sample_rate;
     }
 
-    pub fn update_av_info(&self, ctx: &CoreWrapper) {
+    pub fn update_av_info(&self, core_raw: &Arc<LibretroRaw>) {
         let mut raw_av_info = retro_system_av_info {
             geometry: retro_game_geometry {
                 aspect_ratio: 0.0,
@@ -120,7 +117,7 @@ impl AvInfo {
         };
 
         unsafe {
-            ctx.raw.retro_get_system_av_info(&mut raw_av_info);
+            core_raw.retro_get_system_av_info(&mut raw_av_info);
         }
 
         self.try_set_new_geometry(&raw_av_info.geometry);

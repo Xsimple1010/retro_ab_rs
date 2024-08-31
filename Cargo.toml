@@ -10,6 +10,7 @@ core_logs = []
 
 [dependencies]
 libloading = "0.8.1"
+sdl2 = "0.37.0"
 
 [dependencies.uuid]
 version = "1.8.0"
@@ -18,7 +19,7 @@ features = [
 ]
 
 [build-dependencies]
-bindgen = "0.69.2"
+bindgen = "0.70.1"
 cc = "1.0.83"
 
 [[example]]

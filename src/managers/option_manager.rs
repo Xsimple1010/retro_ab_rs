@@ -1,13 +1,18 @@
+use crate::constants::CORE_OPTION_EXTENSION_FILE;
 use crate::{
+    constants,
     retro_sys::{
         retro_core_option_v2_category, retro_core_option_v2_definition, retro_core_options_v2,
         retro_core_options_v2_intl,
     },
-    constants,
     tools::mutex_tools::get_string_mutex_from_ptr,
 };
-use std::{fs::File, io::{Read, Write}, path::PathBuf, sync::{Mutex}};
-use crate::constants::CORE_OPTION_EXTENSION_FILE;
+use std::{
+    fs::File,
+    io::{Read, Write},
+    path::PathBuf,
+    sync::Mutex,
+};
 
 #[derive(Default, Debug)]
 pub struct Values {
@@ -46,8 +51,7 @@ pub struct OptionManager {
 
 impl OptionManager {
     pub fn new(opt_path: &str, library_name: String) -> OptionManager {
-        let file_path = PathBuf::from(opt_path)
-            .join(library_name + CORE_OPTION_EXTENSION_FILE);
+        let file_path = PathBuf::from(opt_path).join(library_name + CORE_OPTION_EXTENSION_FILE);
 
         OptionManager {
             updated: Mutex::new(true),
@@ -56,7 +60,6 @@ impl OptionManager {
             opts: Mutex::new(Vec::new()),
         }
     }
-
 
     pub fn update_opt(&self, opt_key: &str, new_value_selected: &str) {
         self.change_value_selected(opt_key, new_value_selected);
@@ -158,8 +161,7 @@ impl OptionManager {
                 let info = get_string_mutex_from_ptr(category.info);
                 let desc = get_string_mutex_from_ptr(category.desc);
 
-                self
-                    .categories
+                self.categories
                     .lock()
                     .unwrap()
                     .push(Categories { key, desc, info });
@@ -169,9 +171,7 @@ impl OptionManager {
         }
     }
 
-    fn get_v2_intl_definitions(
-        &self, definitions: *mut retro_core_option_v2_definition,
-    ) {
+    fn get_v2_intl_definitions(&self, definitions: *mut retro_core_option_v2_definition) {
         let definitions = unsafe { *(definitions as *mut [retro_core_option_v2_definition; 90]) };
 
         for definition in definitions {
@@ -228,5 +228,3 @@ impl OptionManager {
     }
     //===============================================
 }
-
-

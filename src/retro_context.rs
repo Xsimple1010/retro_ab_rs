@@ -1,14 +1,14 @@
+use crate::core::CoreWrapperIns;
 use crate::erro_handle::ErroHandle;
+use crate::erro_handle::RetroLogLevel;
 use crate::{core::CoreWrapper, environment::RetroEnvCallbacks, paths::Paths};
 use std::ptr::addr_of;
 use std::sync::Arc;
 use uuid::Uuid;
-use crate::core::CoreWrapperIns;
-use crate::erro_handle::RetroLogLevel;
 
 static mut CONTEXTS: Vec<Arc<RetroContext>> = Vec::new();
 
-type RetroCtxIns = Arc<RetroContext>;
+pub type RetroCtxIns = Arc<RetroContext>;
 
 pub struct RetroContext {
     pub id: Uuid,
@@ -17,7 +17,7 @@ pub struct RetroContext {
 
 impl RetroContext {
     pub fn new(
-        path: &str,
+        core_path: &str,
         paths: Paths,
         callbacks: RetroEnvCallbacks,
     ) -> Result<RetroCtxIns, ErroHandle> {
@@ -25,7 +25,7 @@ impl RetroContext {
 
         let context = Arc::new(RetroContext {
             id,
-            core: CoreWrapper::new(id, path, paths.clone(), callbacks)?,
+            core: CoreWrapper::new(id, core_path, paths.clone(), callbacks)?,
         });
 
         context.core.init()?;
@@ -94,7 +94,6 @@ impl RetroContext {
                 }
             }
         }
-
 
         Err(ErroHandle {
             message: "O contexto voce esta tentando acessar não existe".to_string(),

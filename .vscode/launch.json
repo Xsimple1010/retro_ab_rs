@@ -33,8 +33,8 @@
                 }
             },
             "args": [
-                "--core=C:/Users/aderv/projetos/retro_ab_av/cores/snes9x_libretro.dll",
-                "--rom=C:/Users/aderv/projetos/retro_ab_av/roms/Mega Man X (E).smc"
+                "--core=C:/RetroArch-Win64/cores/ppsspp_libretro.dll",
+                "--rom=C:/Users/aderv/Downloads/God of War - Ghost of Sparta (USA) (En,Fr,Es).iso"
             ],
             "cwd": "${workspaceFolder}"
         }

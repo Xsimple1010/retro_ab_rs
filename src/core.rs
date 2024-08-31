@@ -1,16 +1,14 @@
-use std::sync::{Arc, Mutex};
-use uuid::Uuid;
 pub use crate::av_info::{AvInfo, Geometry, Timing, Video};
 pub use crate::binding::binding_libretro::retro_language;
 pub use crate::binding::binding_libretro::retro_pixel_format;
 pub use crate::environment::RetroEnvCallbacks;
 use crate::erro_handle::{ErroHandle, RetroLogLevel};
 use crate::{
-    binding::binding_libretro::LibretroRaw, environment, paths::Paths, system::System,
-    tools,
-    managers::option_manager::OptionManager,
+    binding::binding_libretro::LibretroRaw, environment, managers::option_manager::OptionManager,
+    paths::Paths, system::System, tools,
 };
-
+use std::sync::{Arc, Mutex};
+use uuid::Uuid;
 
 pub type CoreWrapperIns = Arc<CoreWrapper>;
 
@@ -33,19 +31,19 @@ pub struct CoreWrapper {
     pub callbacks: RetroEnvCallbacks,
 }
 
-impl Drop for CoreWrapper {
-    fn drop(&mut self) {
-        //TODO: descarregar o core aqui!
-    }
-}
-
 impl CoreWrapper {
-    pub fn new(retro_ctx_associated: Uuid, path: &str, paths: Paths, callbacks: RetroEnvCallbacks) -> Result<CoreWrapperIns, ErroHandle> {
-        let raw = unsafe { LibretroRaw::new(path).unwrap() };
+    pub fn new(
+        retro_ctx_associated: Uuid,
+        core_path: &str,
+        paths: Paths,
+        callbacks: RetroEnvCallbacks,
+    ) -> Result<CoreWrapperIns, ErroHandle> {
+        let raw = unsafe { LibretroRaw::new(core_path).unwrap() };
 
         let system = System::new(&raw);
 
-        let options = OptionManager::new(&paths.opt, system.info.library_name.lock().unwrap().clone());
+        let options =
+            OptionManager::new(&paths.opt, system.info.library_name.lock().unwrap().clone());
 
         let core = Arc::new(CoreWrapper {
             raw: Arc::new(raw),
@@ -123,7 +121,7 @@ impl CoreWrapper {
         match tools::game_tools::create_game_info(self, path) {
             Ok(state) => {
                 *self.game_loaded.lock().unwrap() = state;
-                self.av_info.update_av_info(self);
+                self.av_info.update_av_info(&self.raw);
                 Ok(state)
             }
             Err(e) => Err(e),
@@ -177,8 +175,8 @@ impl CoreWrapper {
             return Err(ErroHandle {
                 level: RetroLogLevel::RETRO_LOG_WARN,
                 message:
-                "Nao e possível descarrega o núcleo, pois o mesmo ainda nao foi inicializado!"
-                    .to_string(),
+                    "Nao e possível descarrega o núcleo, pois o mesmo ainda nao foi inicializado!"
+                        .to_string(),
             });
         }
 
