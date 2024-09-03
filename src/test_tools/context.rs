@@ -8,5 +8,6 @@ pub fn get_context() -> Result<Arc<RetroContext>, ErroHandle> {
         CORE_TEST_RELATIVE_PATH,
         paths::get_paths()?,
         core::get_callbacks(),
+        crate::graphic_api::GraphicApi::new(),
     )
 }

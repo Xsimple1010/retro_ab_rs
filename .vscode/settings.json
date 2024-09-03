@@ -12,6 +12,7 @@
         "deinit",
         "dirstream",
         "fparse",
+        "framebuffer",
         "fullpath",
         "iface",
         "JOYPAD",

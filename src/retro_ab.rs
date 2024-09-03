@@ -1,6 +1,7 @@
 use crate::{
     core::{CoreWrapperIns, RetroEnvCallbacks},
     erro_handle::ErroHandle,
+    graphic_api::GraphicApi,
     paths::Paths,
     retro_context::{RetroContext, RetroCtxIns},
 };
@@ -20,9 +21,10 @@ impl RetroAB {
         core_path: &str,
         paths: Paths,
         callbacks: RetroEnvCallbacks,
+        graphic_api: GraphicApi,
     ) -> Result<Self, ErroHandle> {
         Ok(RetroAB {
-            retro_ctx: RetroContext::new(core_path, paths, callbacks)?,
+            retro_ctx: RetroContext::new(core_path, paths, callbacks, graphic_api)?,
         })
     }
 

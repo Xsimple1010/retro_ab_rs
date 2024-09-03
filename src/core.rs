@@ -3,6 +3,7 @@ pub use crate::binding::binding_libretro::retro_language;
 pub use crate::binding::binding_libretro::retro_pixel_format;
 pub use crate::environment::RetroEnvCallbacks;
 use crate::erro_handle::{ErroHandle, RetroLogLevel};
+use crate::graphic_api::GraphicApi;
 use crate::{
     binding::binding_libretro::LibretroRaw, environment, managers::option_manager::OptionManager,
     paths::Paths, system::System, tools,
@@ -37,6 +38,7 @@ impl CoreWrapper {
         core_path: &str,
         paths: Paths,
         callbacks: RetroEnvCallbacks,
+        graphic_api: GraphicApi,
     ) -> Result<CoreWrapperIns, ErroHandle> {
         let raw = unsafe { LibretroRaw::new(core_path).unwrap() };
 
@@ -50,7 +52,7 @@ impl CoreWrapper {
             initialized: Mutex::new(false),
             game_loaded: Mutex::new(false),
             support_no_game: Mutex::new(false),
-            av_info: Arc::new(AvInfo::default()),
+            av_info: Arc::new(AvInfo::new(graphic_api)),
             supports_bitmasks: Mutex::new(false),
             system,
             paths,

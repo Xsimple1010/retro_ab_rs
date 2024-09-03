@@ -1,3 +1,4 @@
+use retro_ab::graphic_api::GraphicApi;
 use retro_ab::test_tools;
 use retro_ab::{erro_handle::ErroHandle, retro_ab::RetroAB};
 use std::env;
@@ -13,6 +14,7 @@ fn main() -> Result<(), ErroHandle> {
                 value,
                 test_tools::paths::get_paths()?,
                 test_tools::core::get_callbacks(),
+                GraphicApi::new(),
             )?);
         }
         _ => {}

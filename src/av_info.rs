@@ -1,10 +1,10 @@
-use std::sync::{Arc, Mutex};
-
+use crate::graphic_api::GraphicApi;
 use crate::retro_sys::LibretroRaw;
 use crate::{
     binding::binding_libretro::{retro_game_geometry, retro_system_av_info, retro_system_timing},
     core::retro_pixel_format,
 };
+use std::sync::{Arc, Mutex};
 
 #[derive(Default, Debug)]
 pub struct Timing {
@@ -41,6 +41,7 @@ pub struct Video {
     pub can_dupe: Mutex<bool>,
     pub pixel_format: Mutex<retro_pixel_format>,
     pub geometry: Geometry,
+    pub graphic_api: GraphicApi,
 }
 
 impl Default for Video {
@@ -49,17 +50,28 @@ impl Default for Video {
             can_dupe: Mutex::new(false),
             pixel_format: Mutex::new(retro_pixel_format::RETRO_PIXEL_FORMAT_UNKNOWN),
             geometry: Geometry::default(),
+            graphic_api: GraphicApi::new(),
         }
     }
 }
 
-#[derive(Default, Debug)]
+#[derive(Debug)]
 pub struct AvInfo {
     pub video: Video,
     pub timing: Timing,
 }
 
 impl AvInfo {
+    pub fn new(graphic_api: GraphicApi) -> Self {
+        let mut video = Video::default();
+        video.graphic_api = graphic_api;
+
+        Self {
+            video,
+            timing: Timing::default(),
+        }
+    }
+
     pub fn try_set_new_geometry(&self, raw_geometry_ptr: *const retro_game_geometry) {
         if raw_geometry_ptr.is_null() {
             return;

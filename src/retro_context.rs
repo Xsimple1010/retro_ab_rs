@@ -1,6 +1,7 @@
 use crate::core::CoreWrapperIns;
 use crate::erro_handle::ErroHandle;
 use crate::erro_handle::RetroLogLevel;
+use crate::graphic_api::GraphicApi;
 use crate::{core::CoreWrapper, environment::RetroEnvCallbacks, paths::Paths};
 use std::ptr::addr_of;
 use std::sync::Arc;
@@ -20,12 +21,13 @@ impl RetroContext {
         core_path: &str,
         paths: Paths,
         callbacks: RetroEnvCallbacks,
+        graphic_api: GraphicApi,
     ) -> Result<RetroCtxIns, ErroHandle> {
         let id = Uuid::new_v4();
 
         let context = Arc::new(RetroContext {
             id,
-            core: CoreWrapper::new(id, core_path, paths.clone(), callbacks)?,
+            core: CoreWrapper::new(id, core_path, paths.clone(), callbacks, graphic_api)?,
         });
 
         context.core.init()?;

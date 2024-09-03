@@ -7,5 +7,6 @@ pub fn setup() -> Result<RetroAB, ErroHandle> {
         test_tools::constants::CORE_TEST_RELATIVE_PATH,
         test_tools::paths::get_paths().unwrap(),
         test_tools::core::get_callbacks(),
+        retro_ab::graphic_api::GraphicApi::new(),
     )
 }

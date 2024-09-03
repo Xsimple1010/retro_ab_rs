@@ -16,6 +16,7 @@ pub mod retro_ab;
 
 pub mod core;
 pub mod erro_handle;
+pub mod graphic_api;
 pub mod paths;
 pub mod system;
 pub mod test_tools;

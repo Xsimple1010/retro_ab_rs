@@ -10,10 +10,10 @@ use crate::{
     },
     retro_sys::{
         retro_controller_info, retro_core_option_display, retro_core_options_v2_intl,
-        retro_game_geometry, retro_language, retro_log_level, retro_perf_callback,
-        retro_pixel_format, retro_rumble_effect, retro_rumble_interface, retro_subsystem_info,
-        retro_variable, RETRO_ENVIRONMENT_GET_AUDIO_VIDEO_ENABLE,
-        RETRO_ENVIRONMENT_GET_CORE_OPTIONS_VERSION,
+        retro_game_geometry, retro_hw_context_type, retro_hw_render_callback, retro_language,
+        retro_log_level, retro_perf_callback, retro_pixel_format, retro_rumble_effect,
+        retro_rumble_interface, retro_subsystem_info, retro_variable,
+        RETRO_ENVIRONMENT_GET_AUDIO_VIDEO_ENABLE, RETRO_ENVIRONMENT_GET_CORE_OPTIONS_VERSION,
         RETRO_ENVIRONMENT_GET_DISK_CONTROL_INTERFACE_VERSION, RETRO_ENVIRONMENT_GET_INPUT_BITMASKS,
         RETRO_ENVIRONMENT_GET_LANGUAGE, RETRO_ENVIRONMENT_GET_LED_INTERFACE,
         RETRO_ENVIRONMENT_GET_LOG_INTERFACE, RETRO_ENVIRONMENT_GET_MESSAGE_INTERFACE_VERSION,
@@ -137,6 +137,19 @@ unsafe extern "C" fn rumble_callback(
 unsafe extern "C" fn core_log(_level: retro_log_level, _log: *const raw::c_char) {
     #[cfg(feature = "core_logs")]
     println!("[{:?}]: {:?}", _level, get_str_from_ptr(_log));
+}
+
+unsafe extern "C" fn get_current_frame_buffer() -> usize {
+    match &*addr_of!(CORE_CONTEXT) {
+        Some(core_ctx) => {
+            if let Some(fbo) = core_ctx.av_info.video.graphic_api.fbo {
+                fbo
+            } else {
+                0
+            }
+        }
+        None => 0,
+    }
 }
 
 pub unsafe extern "C" fn core_environment(cmd: raw::c_uint, _data: *mut c_void) -> bool {
@@ -427,7 +440,7 @@ pub unsafe extern "C" fn core_environment(cmd: raw::c_uint, _data: *mut c_void) 
         }
         RETRO_ENVIRONMENT_GET_PERF_INTERFACE => {
             #[cfg(feature = "core_logs")]
-            println!("RETRO_ENVIRONMENT_GET_PERF_INTERFACE");
+            println!("RETRO_ENVIRONMENT_GET_PERF_INTERFACE -> ok");
 
             let mut perf = *(_data as *mut retro_perf_callback);
 
@@ -447,11 +460,25 @@ pub unsafe extern "C" fn core_environment(cmd: raw::c_uint, _data: *mut c_void) 
         }
         RETRO_ENVIRONMENT_GET_PREFERRED_HW_RENDER => {
             #[cfg(feature = "core_logs")]
-            println!("RETRO_ENVIRONMENT_GET_PREFERRED_HW_RENDER");
+            println!("RETRO_ENVIRONMENT_GET_PREFERRED_HW_RENDER -> ok");
+
+            match &*addr_of!(CORE_CONTEXT) {
+                Some(core_ctx) => {
+                    *(_data as *mut retro_hw_context_type) =
+                        core_ctx.av_info.video.graphic_api.api.clone()
+                }
+                _ => return false,
+            }
+
+            return true;
         }
         RETRO_ENVIRONMENT_SET_HW_RENDER => {
             #[cfg(feature = "core_logs")]
             println!("RETRO_ENVIRONMENT_SET_HW_RENDER");
+
+            let mut data = *(_data as *mut retro_hw_render_callback);
+
+            data.get_current_framebuffer = Some(get_current_frame_buffer);
         }
         RETRO_ENVIRONMENT_SET_VARIABLE => {
             #[cfg(feature = "core_logs")]
