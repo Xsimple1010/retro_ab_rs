@@ -30,8 +30,6 @@ impl RetroContext {
             core: CoreWrapper::new(id, core_path, paths.clone(), callbacks, graphic_api)?,
         });
 
-        context.core.init()?;
-
         unsafe {
             CONTEXTS.push(Arc::clone(&context));
         }
