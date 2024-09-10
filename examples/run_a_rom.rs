@@ -1,4 +1,4 @@
-use retro_ab::graphic_api::GraphicApi;
+use retro_ab::retro_sys::retro_hw_context_type;
 use retro_ab::test_tools;
 use retro_ab::{erro_handle::ErroHandle, retro_ab::RetroAB};
 use std::env;
@@ -14,7 +14,7 @@ fn main() -> Result<(), ErroHandle> {
                 value,
                 test_tools::paths::get_paths()?,
                 test_tools::core::get_callbacks(),
-                GraphicApi::new(),
+                retro_hw_context_type::RETRO_HW_CONTEXT_NONE,
             )?);
         }
         _ => {}
@@ -23,7 +23,9 @@ fn main() -> Result<(), ErroHandle> {
     match value.get_key_value("rom") {
         Some((_, value)) => match &context {
             Some(ctx) => {
+                ctx.core().init()?;
                 let state = ctx.core().load_game(value)?;
+
                 println!("loaded -> {:?}", state);
                 ctx.core().run()?;
             }
@@ -151,9 +153,25 @@ fn main() -> Result<(), ErroHandle> {
 
                     println!("memory: type -> {:?}", rom.memory.type_.lock().unwrap());
                 }
-
-                println!()
             }
+
+            println!("\n+++++video+++++");
+            println!(
+                "context_type -> {:?}",
+                ctx.core().av_info.video.graphic_api.context_type
+            );
+            println!(
+                "pixel_format -> {:?}",
+                ctx.core().av_info.video.pixel_format.lock().unwrap()
+            );
+            println!(
+                "max_height -> {:?}",
+                ctx.core().av_info.video.geometry.max_height.lock().unwrap()
+            );
+            println!(
+                "max_width -> {:?}",
+                ctx.core().av_info.video.geometry.max_width.lock().unwrap()
+            );
         }
         None => {}
     }

@@ -4,6 +4,7 @@ use crate::graphic_api::GraphicApi;
 use crate::retro_sys::retro_rumble_effect;
 use crate::test_tools::constants::CORE_TEST_RELATIVE_PATH;
 use crate::test_tools::paths::get_paths;
+use std::ptr;
 use std::sync::Arc;
 use uuid::Uuid;
 
@@ -39,6 +40,20 @@ fn rumble_callback(port: std::os::raw::c_uint, effect: retro_rumble_effect, stre
     true
 }
 
+fn context_destroy() {
+    println!("context_destroy");
+}
+
+fn context_reset() {
+    println!("context_reset");
+}
+
+fn get_proc_address(name: &str) -> *const () {
+    println!("video api request: {:?}", name);
+
+    ptr::null()
+}
+
 pub fn get_callbacks() -> RetroEnvCallbacks {
     RetroEnvCallbacks {
         audio_sample_batch_callback,
@@ -47,6 +62,9 @@ pub fn get_callbacks() -> RetroEnvCallbacks {
         input_state_callback,
         video_refresh_callback,
         rumble_callback,
+        context_destroy,
+        context_reset,
+        get_proc_address,
     }
 }
 
@@ -56,7 +74,7 @@ pub fn get_core_wrapper() -> Arc<CoreWrapper> {
         CORE_TEST_RELATIVE_PATH,
         get_paths().unwrap(),
         get_callbacks(),
-        GraphicApi::new(),
+        GraphicApi::default(),
     )
     .unwrap()
 }

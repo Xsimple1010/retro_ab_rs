@@ -36,6 +36,7 @@ use crate::{
     tools::ffi_tools::{get_str_from_ptr, make_c_string},
 };
 use ::std::os::raw;
+use std::mem;
 use std::{os::raw::c_void, ptr::addr_of, sync::Arc};
 
 #[derive(Clone, Copy, Debug)]
@@ -46,6 +47,12 @@ pub struct RetroEnvCallbacks {
     pub input_poll_callback: fn(),
     pub input_state_callback: fn(port: i16, device: i16, index: i16, id: i16) -> i16,
     pub rumble_callback: fn(port: raw::c_uint, effect: retro_rumble_effect, strength: u16) -> bool,
+    #[doc = " Called when a context has been created or when it has been reset.\n An OpenGL context is only valid after context_reset() has been called.\n\n When context_reset is called, OpenGL resources in the libretro\n implementation are guaranteed to be invalid.\n\n It is possible that context_reset is called multiple times during an\n application lifecycle.\n If context_reset is called without any notification (context_destroy),\n the OpenGL context was lost and resources should just be recreated\n without any attempt to \"free\" old resources."]
+    pub context_reset: fn(),
+    #[doc = " Set by frontend.\n Can return all relevant functions, including glClear on Windows."]
+    pub get_proc_address: fn(proc_name: &str) -> *const (),
+    #[doc = " A callback to be called before the context is destroyed in a\n controlled way by the frontend."]
+    pub context_destroy: fn(),
 }
 
 static mut CORE_CONTEXT: Option<Arc<CoreWrapper>> = None;
@@ -142,14 +149,35 @@ unsafe extern "C" fn core_log(_level: retro_log_level, _log: *const raw::c_char)
 
 unsafe extern "C" fn get_current_frame_buffer() -> usize {
     match &*addr_of!(CORE_CONTEXT) {
-        Some(core_ctx) => {
-            if let Some(fbo) = core_ctx.av_info.video.graphic_api.fbo {
-                fbo
-            } else {
-                0
-            }
-        }
+        Some(core_ctx) => core_ctx.av_info.video.graphic_api.fbo.unwrap(),
         None => 0,
+    }
+}
+
+unsafe extern "C" fn get_proc_address(sym: *const ::std::os::raw::c_char) -> retro_proc_address_t {
+    match &*addr_of!(CORE_CONTEXT) {
+        Some(core_ctx) => {
+            let fc_name = get_str_from_ptr(sym);
+
+            let proc_address = (core_ctx.callbacks.get_proc_address)(&fc_name);
+
+            let function: unsafe extern "C" fn() = unsafe { mem::transmute(proc_address) };
+
+            Some(function)
+        }
+        None => None,
+    }
+}
+
+unsafe extern "C" fn context_reset() {
+    if let Some(core_ctx) = &*addr_of!(CORE_CONTEXT) {
+        (core_ctx.callbacks.context_reset)()
+    }
+}
+
+unsafe extern "C" fn context_destroy() {
+    if let Some(core_ctx) = &*addr_of!(CORE_CONTEXT) {
+        (core_ctx.callbacks.context_destroy)()
     }
 }
 
@@ -481,7 +509,7 @@ pub unsafe extern "C" fn core_environment(cmd: raw::c_uint, _data: *mut c_void) 
             match &*addr_of!(CORE_CONTEXT) {
                 Some(core_ctx) => {
                     *(_data as *mut retro_hw_context_type) =
-                        core_ctx.av_info.video.graphic_api.api.clone()
+                        core_ctx.av_info.video.graphic_api.context_type
                 }
                 _ => return false,
             }
@@ -494,7 +522,46 @@ pub unsafe extern "C" fn core_environment(cmd: raw::c_uint, _data: *mut c_void) 
 
             let mut data = *(_data as *mut retro_hw_render_callback);
 
-            data.get_current_framebuffer = Some(get_current_frame_buffer);
+            println!("{:?}", data.version_minor);
+
+            match &*addr_of!(CORE_CONTEXT) {
+                Some(core_ctx) => {
+                    *core_ctx.av_info.video.graphic_api.depth.lock().unwrap() = data.depth;
+                    *core_ctx.av_info.video.graphic_api.stencil.lock().unwrap() = data.stencil;
+                    *core_ctx
+                        .av_info
+                        .video
+                        .graphic_api
+                        .bottom_left_origin
+                        .lock()
+                        .unwrap() = data.bottom_left_origin;
+                    *core_ctx.av_info.video.graphic_api.minor.lock().unwrap() = data.version_minor;
+                    *core_ctx.av_info.video.graphic_api.major.lock().unwrap() = data.version_major;
+                    *core_ctx
+                        .av_info
+                        .video
+                        .graphic_api
+                        .cache_context
+                        .lock()
+                        .unwrap() = data.cache_context;
+                    *core_ctx
+                        .av_info
+                        .video
+                        .graphic_api
+                        .debug_context
+                        .lock()
+                        .unwrap() = data.debug_context;
+
+                    data.get_current_framebuffer = Some(get_current_frame_buffer);
+
+                    data.get_proc_address = Some(get_proc_address);
+                    data.context_reset = Some(context_reset);
+                    data.context_destroy = Some(context_destroy);
+                }
+                _ => return false,
+            }
+
+            return true;
         }
         RETRO_ENVIRONMENT_SET_VARIABLE => {
             #[cfg(feature = "core_logs")]

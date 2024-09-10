@@ -50,7 +50,7 @@ impl Default for Video {
             can_dupe: Mutex::new(false),
             pixel_format: Mutex::new(retro_pixel_format::RETRO_PIXEL_FORMAT_UNKNOWN),
             geometry: Geometry::default(),
-            graphic_api: GraphicApi::new(),
+            graphic_api: GraphicApi::default(),
         }
     }
 }
@@ -63,11 +63,11 @@ pub struct AvInfo {
 
 impl AvInfo {
     pub fn new(graphic_api: GraphicApi) -> Self {
-        let mut video = Video::default();
-        video.graphic_api = graphic_api;
-
         Self {
-            video,
+            video: Video {
+                graphic_api,
+                ..Default::default()
+            },
             timing: Timing::default(),
         }
     }

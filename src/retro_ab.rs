@@ -4,6 +4,7 @@ use crate::{
     graphic_api::GraphicApi,
     paths::Paths,
     retro_context::{RetroContext, RetroCtxIns},
+    retro_sys::retro_hw_context_type,
 };
 
 pub struct RetroAB {
@@ -12,7 +13,7 @@ pub struct RetroAB {
 
 impl Drop for RetroAB {
     fn drop(&mut self) {
-        self.retro_ctx.delete().unwrap();
+        let _ = self.retro_ctx.delete();
     }
 }
 
@@ -21,10 +22,10 @@ impl RetroAB {
         core_path: &str,
         paths: Paths,
         callbacks: RetroEnvCallbacks,
-        graphic_api: GraphicApi,
+        hw_type: retro_hw_context_type,
     ) -> Result<Self, ErroHandle> {
         Ok(RetroAB {
-            retro_ctx: RetroContext::new(core_path, paths, callbacks, graphic_api)?,
+            retro_ctx: RetroContext::new(core_path, paths, callbacks, GraphicApi::with(hw_type))?,
         })
     }
 
