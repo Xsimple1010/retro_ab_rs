@@ -11,9 +11,10 @@ use crate::{
     retro_sys::{
         retro_controller_info, retro_core_option_display, retro_core_options_v2_intl,
         retro_game_geometry, retro_hw_context_type, retro_hw_render_callback, retro_language,
-        retro_log_level, retro_perf_callback, retro_pixel_format, retro_rumble_effect,
-        retro_rumble_interface, retro_subsystem_info, retro_variable,
-        RETRO_ENVIRONMENT_GET_AUDIO_VIDEO_ENABLE, RETRO_ENVIRONMENT_GET_CORE_OPTIONS_VERSION,
+        retro_log_level, retro_perf_callback, retro_pixel_format, retro_proc_address_t,
+        retro_rumble_effect, retro_rumble_interface, retro_subsystem_info, retro_variable,
+        RETRO_ENVIRONMENT_GET_AUDIO_VIDEO_ENABLE, RETRO_ENVIRONMENT_GET_CORE_ASSETS_DIRECTORY,
+        RETRO_ENVIRONMENT_GET_CORE_OPTIONS_VERSION,
         RETRO_ENVIRONMENT_GET_DISK_CONTROL_INTERFACE_VERSION, RETRO_ENVIRONMENT_GET_INPUT_BITMASKS,
         RETRO_ENVIRONMENT_GET_LANGUAGE, RETRO_ENVIRONMENT_GET_LED_INTERFACE,
         RETRO_ENVIRONMENT_GET_LOG_INTERFACE, RETRO_ENVIRONMENT_GET_MESSAGE_INTERFACE_VERSION,
@@ -191,6 +192,21 @@ pub unsafe extern "C" fn core_environment(cmd: raw::c_uint, _data: *mut c_void) 
                     let save_dir = make_c_string(&core_ctx.paths.save).unwrap();
 
                     binding_log_interface::set_directory(_data, save_dir.as_ptr())
+                }
+                _ => return false,
+            }
+
+            return true;
+        }
+        RETRO_ENVIRONMENT_GET_CORE_ASSETS_DIRECTORY => {
+            #[cfg(feature = "core_logs")]
+            println!("RETRO_ENVIRONMENT_GET_CORE_ASSETS_DIRECTORY -> ok");
+
+            match &*addr_of!(CORE_CONTEXT) {
+                Some(core_ctx) => {
+                    let assents_dir = make_c_string(&core_ctx.paths.assets).unwrap();
+
+                    binding_log_interface::set_directory(_data, assents_dir.as_ptr())
                 }
                 _ => return false,
             }

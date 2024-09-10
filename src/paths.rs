@@ -9,37 +9,49 @@ pub struct Paths {
     pub system: String,
     pub save: String,
     pub opt: String,
+    pub assets: String,
 }
 
 impl Paths {
-    pub fn new(system: String, save: String, opt: String) -> Result<Self, ErroHandle> {
-        if Path::new(&system).exists().not() {
-            if fs::create_dir_all(&system).is_err() {
-                return Err(ErroHandle {
-                    level: RETRO_LOG_ERROR,
-                    message: "Não foi possível criar a pasta system".to_owned(),
-                });
-            }
+    pub fn new(
+        system: String,
+        save: String,
+        opt: String,
+        assets: String,
+    ) -> Result<Self, ErroHandle> {
+        if Path::new(&system).exists().not() && fs::create_dir_all(&system).is_err() {
+            return Err(ErroHandle {
+                level: RETRO_LOG_ERROR,
+                message: "Não foi possível criar a pasta system".to_owned(),
+            });
         }
 
-        if Path::new(&save).exists().not() {
-            if fs::create_dir_all(&save).is_err() {
-                return Err(ErroHandle {
-                    level: RETRO_LOG_ERROR,
-                    message: "Não foi possível criar a pasta save".to_owned(),
-                });
-            }
+        if Path::new(&save).exists().not() && fs::create_dir_all(&save).is_err() {
+            return Err(ErroHandle {
+                level: RETRO_LOG_ERROR,
+                message: "Não foi possível criar a pasta save".to_owned(),
+            });
         }
 
-        if Path::new(&opt).exists().not() {
-            if fs::create_dir_all(&opt).is_err() {
-                return Err(ErroHandle {
-                    level: RETRO_LOG_ERROR,
-                    message: "Não foi possível criar a pasta opt".to_owned(),
-                });
-            }
+        if Path::new(&opt).exists().not() && fs::create_dir_all(&opt).is_err() {
+            return Err(ErroHandle {
+                level: RETRO_LOG_ERROR,
+                message: "Não foi possível criar a pasta opt".to_owned(),
+            });
         }
 
-        Ok(Paths { system, opt, save })
+        if Path::new(&assets).exists().not() && fs::create_dir_all(&assets).is_err() {
+            return Err(ErroHandle {
+                level: RETRO_LOG_ERROR,
+                message: "Não foi possível criar a pasta opt".to_owned(),
+            });
+        }
+
+        Ok(Paths {
+            system,
+            opt,
+            save,
+            assets,
+        })
     }
 }
