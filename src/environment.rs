@@ -149,7 +149,15 @@ unsafe extern "C" fn core_log(_level: retro_log_level, _log: *const raw::c_char)
 
 unsafe extern "C" fn get_current_frame_buffer() -> usize {
     match &*addr_of!(CORE_CONTEXT) {
-        Some(core_ctx) => core_ctx.av_info.video.graphic_api.fbo.unwrap(),
+        Some(core_ctx) => core_ctx
+            .av_info
+            .video
+            .graphic_api
+            .fbo
+            .lock()
+            .unwrap()
+            .unwrap()
+            .clone(),
         None => 0,
     }
 }
@@ -160,6 +168,10 @@ unsafe extern "C" fn get_proc_address(sym: *const ::std::os::raw::c_char) -> ret
             let fc_name = get_str_from_ptr(sym);
 
             let proc_address = (core_ctx.callbacks.get_proc_address)(&fc_name);
+
+            if proc_address.is_null() {
+                return None;
+            }
 
             let function: unsafe extern "C" fn() = unsafe { mem::transmute(proc_address) };
 
@@ -504,7 +516,7 @@ pub unsafe extern "C" fn core_environment(cmd: raw::c_uint, _data: *mut c_void) 
         }
         RETRO_ENVIRONMENT_GET_PREFERRED_HW_RENDER => {
             #[cfg(feature = "core_logs")]
-            println!("RETRO_ENVIRONMENT_GET_PREFERRED_HW_RENDER -> ok");
+            println!("RETRO_ENVIRONMENT_GET_PREFERRED_HW_RENDER");
 
             match &*addr_of!(CORE_CONTEXT) {
                 Some(core_ctx) => {
@@ -514,15 +526,13 @@ pub unsafe extern "C" fn core_environment(cmd: raw::c_uint, _data: *mut c_void) 
                 _ => return false,
             }
 
-            return true;
+            return false;
         }
         RETRO_ENVIRONMENT_SET_HW_RENDER => {
             #[cfg(feature = "core_logs")]
             println!("RETRO_ENVIRONMENT_SET_HW_RENDER");
 
             let mut data = *(_data as *mut retro_hw_render_callback);
-
-            println!("{:?}", data.version_minor);
 
             match &*addr_of!(CORE_CONTEXT) {
                 Some(core_ctx) => {
@@ -561,7 +571,7 @@ pub unsafe extern "C" fn core_environment(cmd: raw::c_uint, _data: *mut c_void) 
                 _ => return false,
             }
 
-            return true;
+            return false;
         }
         RETRO_ENVIRONMENT_SET_VARIABLE => {
             #[cfg(feature = "core_logs")]

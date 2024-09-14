@@ -8,7 +8,7 @@ pub struct GraphicApi {
     pub context_type: retro_hw_context_type,
 
     #[doc = " Set by frontend.\n TODO: This is rather obsolete. The frontend should not\n be providing preallocated framebuffers."]
-    pub fbo: Option<usize>,
+    pub fbo: Mutex<Option<usize>>,
 
     #[doc = " Set if render buffers should have depth component attached.\n TODO: Obsolete."]
     pub depth: Mutex<bool>,
@@ -38,7 +38,7 @@ impl Default for GraphicApi {
     fn default() -> Self {
         GraphicApi {
             context_type: retro_hw_context_type::RETRO_HW_CONTEXT_NONE,
-            fbo: None,
+            fbo: Mutex::new(None),
             depth: Mutex::new(false),
             stencil: Mutex::new(false),
             bottom_left_origin: Mutex::new(false),
