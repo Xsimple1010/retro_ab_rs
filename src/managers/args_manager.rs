@@ -1,4 +1,22 @@
-use std::collections::HashMap;
+use std::env;
+
+use crate::erro_handle::ErroHandle;
+
+pub struct RetroArgs {
+    pub core: String,
+    pub rom: String,
+}
+
+impl RetroArgs {
+    pub fn new() -> Result<Self, ErroHandle> {
+        let args = env::args().collect();
+
+        let core = get_value(&args, "--core=")?;
+        let rom = get_value(&args, "--rom=")?;
+
+        Ok(Self { core, rom })
+    }
+}
 
 fn get_key_and_value(arg: &str) -> (String, String) {
     let (mut key, mut value) = (String::from(""), String::from(""));
@@ -16,62 +34,52 @@ fn get_key_and_value(arg: &str) -> (String, String) {
     (key, value)
 }
 
-pub fn get_values(args: Vec<String>) -> HashMap<String, String> {
-    let mut values: HashMap<String, String> = HashMap::new();
-
+pub fn get_value(args: &Vec<String>, key: &str) -> Result<String, ErroHandle> {
     for arg in args {
-        if arg.contains("--core=") {
+        if arg.contains(key) {
             let (key, value) = get_key_and_value(&arg);
 
             if !key.is_empty() {
-                values.insert(key, value);
-            }
-        }
-
-        if arg.contains("--rom=") {
-            let (key, value) = get_key_and_value(&arg);
-
-            if !key.is_empty() {
-                values.insert(key, value);
+                return Ok(value);
+            } else {
+                return Err(ErroHandle {
+                    level: crate::erro_handle::RetroLogLevel::RETRO_LOG_ERROR,
+                    message: "Valor não encontrado:".to_owned() + &key,
+                });
             }
         }
     }
 
-    values
+    Err(ErroHandle {
+        level: crate::erro_handle::RetroLogLevel::RETRO_LOG_ERROR,
+        message: "Valor não encontrado:".to_owned() + key,
+    })
 }
 
 #[test]
-fn teste_get_values() {
+fn teste_get_values() -> Result<(), ErroHandle> {
     let mut args: Vec<String> = Vec::new();
 
     args.push("--core=test.c".to_string());
     args.push("--rom=test.r".to_string());
 
-    let values = get_values(args);
+    let core = get_value(&args, "--core=")?;
 
-    match values.get_key_value("rom") {
-        Some((key, value)) => {
-            assert_eq!(key, "rom");
-            assert_eq!(value, "test.r");
-        }
-        None => panic!("o parâmetro 'rom' nao foi encontrado"),
-    }
+    assert_eq!(
+        core, "test.c",
+        "valor esperado para 'value' == 'test.c', valor encontrado -> {:?}",
+        core
+    );
 
-    match values.get_key_value("core") {
-        Some((key, value)) => {
-            assert_eq!(
-                key, "core",
-                "valor esperado para 'key' == 'core', valor encontrado -> {:?}",
-                key
-            );
-            assert_eq!(
-                value, "test.c",
-                "valor esperado para 'value' == 'test.c', valor encontrado -> {:?}",
-                value
-            );
-        }
-        None => panic!("o parâmetro 'core' nao foi encontrado"),
-    }
+    let rom = get_value(&args, "--rom=")?;
+
+    assert_eq!(
+        rom, "test.r",
+        "valor esperado para 'value' == 'test.r', valor encontrado -> {:?}",
+        rom
+    );
+
+    Ok(())
 }
 
 #[test]
