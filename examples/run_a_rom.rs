@@ -13,7 +13,6 @@ fn main() -> Result<(), ErroHandle> {
         retro_hw_context_type::RETRO_HW_CONTEXT_NONE,
     )?;
 
-    retro_ab.core().init()?;
     let state = retro_ab.core().load_game(&arg.rom)?;
 
     println!("loaded -> {:?}", state);
