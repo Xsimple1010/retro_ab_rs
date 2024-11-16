@@ -86,9 +86,9 @@ pub unsafe extern "C" fn audio_sample_callback(left: i16, right: i16) {
     }
 }
 
-pub unsafe extern "C" fn audio_sample_batch_callback(_data: *const i16, frames: usize) -> usize {
+pub unsafe extern "C" fn audio_sample_batch_callback(data: *const i16, frames: usize) -> usize {
     if let Some(core_ctx) = &*addr_of!(CORE_CONTEXT) {
-        (core_ctx.callbacks.audio_sample_batch_callback)(_data, frames)
+        (core_ctx.callbacks.audio_sample_batch_callback)(data, frames)
     } else {
         0
     }
@@ -125,7 +125,7 @@ pub unsafe extern "C" fn video_refresh_callback(
 ) {
     match &*addr_of!(CORE_CONTEXT) {
         Some(core_ctx) => {
-            (core_ctx.callbacks.video_refresh_callback)(_data, _width, _height, _pitch);
+            (core_ctx.callbacks.video_refresh_callback)(data, width, height, pitch);
         }
         None => {}
     }
@@ -193,7 +193,7 @@ unsafe extern "C" fn context_destroy() {
     }
 }
 
-pub unsafe extern "C" fn core_environment(cmd: raw::c_uint, _data: *mut c_void) -> bool {
+pub unsafe extern "C" fn core_environment(cmd: raw::c_uint, data: *mut c_void) -> bool {
     match cmd {
         RETRO_ENVIRONMENT_SET_SUPPORT_NO_GAME => {
             #[cfg(feature = "core_logs")]
@@ -201,7 +201,7 @@ pub unsafe extern "C" fn core_environment(cmd: raw::c_uint, _data: *mut c_void) 
 
             match &*addr_of!(CORE_CONTEXT) {
                 Some(core_ctx) => {
-                    *core_ctx.support_no_game.lock().unwrap() = *(_data as *mut bool);
+                    *core_ctx.support_no_game.lock().unwrap() = *(data as *mut bool);
                 }
                 None => return false,
             }
@@ -216,7 +216,7 @@ pub unsafe extern "C" fn core_environment(cmd: raw::c_uint, _data: *mut c_void) 
                 Some(core_ctx) => {
                     let sys_dir = make_c_string(&core_ctx.paths.system).unwrap();
 
-                    binding_log_interface::set_directory(_data, sys_dir.as_ptr())
+                    binding_log_interface::set_directory(data, sys_dir.as_ptr())
                 }
                 _ => return false,
             }
@@ -231,7 +231,7 @@ pub unsafe extern "C" fn core_environment(cmd: raw::c_uint, _data: *mut c_void) 
                 Some(core_ctx) => {
                     let save_dir = make_c_string(&core_ctx.paths.save).unwrap();
 
-                    binding_log_interface::set_directory(_data, save_dir.as_ptr())
+                    binding_log_interface::set_directory(data, save_dir.as_ptr())
                 }
                 _ => return false,
             }
@@ -246,7 +246,7 @@ pub unsafe extern "C" fn core_environment(cmd: raw::c_uint, _data: *mut c_void) 
                 Some(core_ctx) => {
                     let assents_dir = make_c_string(&core_ctx.paths.assets).unwrap();
 
-                    binding_log_interface::set_directory(_data, assents_dir.as_ptr())
+                    binding_log_interface::set_directory(data, assents_dir.as_ptr())
                 }
                 _ => return false,
             }
@@ -264,7 +264,7 @@ pub unsafe extern "C" fn core_environment(cmd: raw::c_uint, _data: *mut c_void) 
         RETRO_ENVIRONMENT_GET_CORE_OPTIONS_VERSION => {
             #[cfg(feature = "core_logs")]
             println!("RETRO_ENVIRONMENT_GET_CORE_OPTIONS_VERSION -> ok");
-            *(_data as *mut u32) = 2;
+            *(data as *mut u32) = 2;
             return true;
         }
         RETRO_ENVIRONMENT_SET_CORE_OPTIONS_V2_INTL => {
@@ -273,7 +273,7 @@ pub unsafe extern "C" fn core_environment(cmd: raw::c_uint, _data: *mut c_void) 
 
             match &*addr_of!(CORE_CONTEXT) {
                 Some(core_ctx) => {
-                    let option_intl_v2 = *(_data as *mut retro_core_options_v2_intl);
+                    let option_intl_v2 = *(data as *mut retro_core_options_v2_intl);
 
                     core_ctx.options.convert_option_v2_intl(option_intl_v2);
                     core_ctx.options.try_reload_pref_option();
@@ -289,7 +289,7 @@ pub unsafe extern "C" fn core_environment(cmd: raw::c_uint, _data: *mut c_void) 
 
             match &*addr_of!(CORE_CONTEXT) {
                 Some(core_ctx) => {
-                    let option = *(_data as *mut retro_core_option_display);
+                    let option = *(data as *mut retro_core_option_display);
 
                     core_ctx
                         .options
@@ -307,10 +307,10 @@ pub unsafe extern "C" fn core_environment(cmd: raw::c_uint, _data: *mut c_void) 
         RETRO_ENVIRONMENT_GET_LANGUAGE => {
             #[cfg(feature = "core_logs")]
             println!("RETRO_ENVIRONMENT_GET_LANGUAGE -> ok");
-            *(_data as *mut retro_language) = retro_language::RETRO_LANGUAGE_ENGLISH;
+            *(data as *mut retro_language) = retro_language::RETRO_LANGUAGE_ENGLISH;
             match &*addr_of!(CORE_CONTEXT) {
                 Some(core_ctx) => {
-                    *core_ctx.language.lock().unwrap() = *(_data as *mut retro_language);
+                    *core_ctx.language.lock().unwrap() = *(data as *mut retro_language);
                 }
                 None => return false,
             }
@@ -319,7 +319,7 @@ pub unsafe extern "C" fn core_environment(cmd: raw::c_uint, _data: *mut c_void) 
         RETRO_ENVIRONMENT_SET_GEOMETRY => {
             #[cfg(feature = "core_logs")]
             println!("RETRO_ENVIRONMENT_SET_GEOMETRY -> ok");
-            let raw_geometry_ptr = _data as *mut retro_game_geometry;
+            let raw_geometry_ptr = data as *mut retro_game_geometry;
 
             if raw_geometry_ptr.is_null() {
                 return false;
@@ -341,7 +341,7 @@ pub unsafe extern "C" fn core_environment(cmd: raw::c_uint, _data: *mut c_void) 
             match &*addr_of!(CORE_CONTEXT) {
                 Some(core_ctx) => {
                     *core_ctx.av_info.video.pixel_format.lock().unwrap() =
-                        *(_data as *mut retro_pixel_format);
+                        *(data as *mut retro_pixel_format);
                 }
                 None => return false,
             }
@@ -354,9 +354,9 @@ pub unsafe extern "C" fn core_environment(cmd: raw::c_uint, _data: *mut c_void) 
             match &*addr_of!(CORE_CONTEXT) {
                 Some(core_ctx) => {
                     if !core_ctx.options.opts.lock().unwrap().is_empty() {
-                        *(_data as *mut bool) = *core_ctx.options.updated.lock().unwrap()
+                        *(data as *mut bool) = *core_ctx.options.updated.lock().unwrap()
                     } else {
-                        *(_data as *mut bool) = false;
+                        *(data as *mut bool) = false;
                     }
                 }
                 _ => return false,
@@ -372,13 +372,13 @@ pub unsafe extern "C" fn core_environment(cmd: raw::c_uint, _data: *mut c_void) 
             #[cfg(feature = "core_logs")]
             println!("RETRO_ENVIRONMENT_GET_VARIABLE -> ok");
 
-            let raw_variable = _data as *const retro_variable;
+            let raw_variable = data as *const retro_variable;
 
             if raw_variable.is_null() {
                 return true;
             }
 
-            binding_log_interface::set_variable_value_as_null(_data);
+            binding_log_interface::set_variable_value_as_null(data);
 
             match &*addr_of!(CORE_CONTEXT) {
                 Some(core_ctx) => {
@@ -386,7 +386,7 @@ pub unsafe extern "C" fn core_environment(cmd: raw::c_uint, _data: *mut c_void) 
                         return true;
                     }
 
-                    let raw_variable = *(_data as *const retro_variable);
+                    let raw_variable = *(data as *const retro_variable);
                     let key = get_str_from_ptr(raw_variable.key);
 
                     for opt in &*core_ctx.options.opts.lock().unwrap() {
@@ -394,7 +394,7 @@ pub unsafe extern "C" fn core_environment(cmd: raw::c_uint, _data: *mut c_void) 
                             let new_value = make_c_string(&opt.selected.lock().unwrap()).unwrap();
 
                             let result = binding_log_interface::set_new_value_variable(
-                                _data,
+                                data,
                                 new_value.as_ptr(),
                             );
 
@@ -415,7 +415,7 @@ pub unsafe extern "C" fn core_environment(cmd: raw::c_uint, _data: *mut c_void) 
             #[cfg(feature = "core_logs")]
             println!("RETRO_ENVIRONMENT_GET_LOG_INTERFACE -> ok");
 
-            binding_log_interface::configure_log_interface(Some(core_log), _data);
+            binding_log_interface::configure_log_interface(Some(core_log), data);
 
             return true;
         }
@@ -426,7 +426,7 @@ pub unsafe extern "C" fn core_environment(cmd: raw::c_uint, _data: *mut c_void) 
             match &*addr_of!(CORE_CONTEXT) {
                 Some(core_ctx) => {
                     let raw_subsystem =
-                        *(_data as *mut [retro_subsystem_info; MAX_CORE_SUBSYSTEM_INFO]);
+                        *(data as *mut [retro_subsystem_info; MAX_CORE_SUBSYSTEM_INFO]);
 
                     core_ctx.system.get_subsystem(raw_subsystem)
                 }
@@ -447,7 +447,7 @@ pub unsafe extern "C" fn core_environment(cmd: raw::c_uint, _data: *mut c_void) 
             match &*addr_of!(CORE_CONTEXT) {
                 Some(core_ctx) => {
                     let raw_ctr_infos =
-                        *(_data as *mut [retro_controller_info; MAX_CORE_CONTROLLER_INFO_TYPES]);
+                        *(data as *mut [retro_controller_info; MAX_CORE_CONTROLLER_INFO_TYPES]);
 
                     core_ctx.system.ports.lock().unwrap().clear();
 
@@ -470,7 +470,7 @@ pub unsafe extern "C" fn core_environment(cmd: raw::c_uint, _data: *mut c_void) 
             #[cfg(feature = "core_logs")]
             println!("RETRO_ENVIRONMENT_GET_AUDIO_VIDEO_ENABLE -> ok");
 
-            *(_data as *mut u32) = 1 << 0 | 1 << 1;
+            *(data as *mut u32) = 1 << 0 | 1 << 1;
 
             return true;
         }
@@ -498,7 +498,7 @@ pub unsafe extern "C" fn core_environment(cmd: raw::c_uint, _data: *mut c_void) 
             #[cfg(feature = "core_logs")]
             println!("RETRO_ENVIRONMENT_GET_PERF_INTERFACE -> ok");
 
-            let mut perf = *(_data as *mut retro_perf_callback);
+            let mut perf = *(data as *mut retro_perf_callback);
 
             perf.get_time_usec = Some(get_features_get_time_usec);
             perf.get_cpu_features = Some(get_cpu_features);
@@ -520,7 +520,7 @@ pub unsafe extern "C" fn core_environment(cmd: raw::c_uint, _data: *mut c_void) 
 
             match &*addr_of!(CORE_CONTEXT) {
                 Some(core_ctx) => {
-                    *(_data as *mut retro_hw_context_type) =
+                    *(data as *mut retro_hw_context_type) =
                         core_ctx.av_info.video.graphic_api.context_type
                 }
                 _ => return false,
@@ -532,7 +532,7 @@ pub unsafe extern "C" fn core_environment(cmd: raw::c_uint, _data: *mut c_void) 
             #[cfg(feature = "core_logs")]
             println!("RETRO_ENVIRONMENT_SET_HW_RENDER");
 
-            let mut data = *(_data as *mut retro_hw_render_callback);
+            let mut data = *(data as *mut retro_hw_render_callback);
 
             match &*addr_of!(CORE_CONTEXT) {
                 Some(core_ctx) => {
@@ -585,7 +585,7 @@ pub unsafe extern "C" fn core_environment(cmd: raw::c_uint, _data: *mut c_void) 
             #[cfg(feature = "core_logs")]
             println!("RETRO_ENVIRONMENT_GET_RUMBLE_INTERFACE -> ok");
 
-            let mut rumble_raw = *(_data as *mut retro_rumble_interface);
+            let mut rumble_raw = *(data as *mut retro_rumble_interface);
             rumble_raw.set_rumble_state = Some(rumble_callback);
 
             return true;
