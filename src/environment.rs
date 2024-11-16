@@ -101,27 +101,27 @@ pub unsafe extern "C" fn input_poll_callback() {
 }
 
 pub unsafe extern "C" fn input_state_callback(
-    _port: raw::c_uint,
-    _device: raw::c_uint,
-    _index: raw::c_uint,
-    _id: raw::c_uint,
+    port: raw::c_uint,
+    device: raw::c_uint,
+    index: raw::c_uint,
+    id: raw::c_uint,
 ) -> i16 {
     match &*addr_of!(CORE_CONTEXT) {
         Some(core_ctx) => (core_ctx.callbacks.input_state_callback)(
-            _port as i16,
-            _device as i16,
-            _index as i16,
-            _id as i16,
+            port as i16,
+            device as i16,
+            index as i16,
+            id as i16,
         ),
         None => 0,
     }
 }
 
 pub unsafe extern "C" fn video_refresh_callback(
-    _data: *const c_void,
-    _width: raw::c_uint,
-    _height: raw::c_uint,
-    _pitch: usize,
+    data: *const c_void,
+    width: raw::c_uint,
+    height: raw::c_uint,
+    pitch: usize,
 ) {
     match &*addr_of!(CORE_CONTEXT) {
         Some(core_ctx) => {
@@ -142,9 +142,9 @@ unsafe extern "C" fn rumble_callback(
     }
 }
 
-unsafe extern "C" fn core_log(_level: retro_log_level, _log: *const raw::c_char) {
+unsafe extern "C" fn core_log(level: retro_log_level, log: *const raw::c_char) {
     #[cfg(feature = "core_logs")]
-    println!("[{:?}]: {:?}", _level, get_str_from_ptr(_log));
+    println!("[{:?}]: {:?}", level, get_str_from_ptr(log));
 }
 
 unsafe extern "C" fn get_current_frame_buffer() -> usize {

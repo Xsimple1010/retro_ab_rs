@@ -43,7 +43,7 @@ impl Paths {
         if Path::new(&assets).exists().not() && fs::create_dir_all(&assets).is_err() {
             return Err(ErroHandle {
                 level: RETRO_LOG_ERROR,
-                message: "Não foi possível criar a pasta opt".to_owned(),
+                message: "Não foi possível criar a pasta assets".to_owned(),
             });
         }
 

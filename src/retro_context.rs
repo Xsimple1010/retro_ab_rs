@@ -63,8 +63,6 @@ impl RetroContext {
             }
         };
 
-        self.core.de_init()?;
-
         Ok(())
     }
 

@@ -16,7 +16,7 @@ fn main() -> Result<(), ErroHandle> {
     let state = retro_ab.core().load_game(&arg.rom)?;
 
     println!("loaded -> {:?}", state);
-    retro_ab.core().run()?;
+    // retro_ab.core().run()?;
 
     println!("=======core context=======");
     // println!("core version -> {:?}", retro_ab.core());
