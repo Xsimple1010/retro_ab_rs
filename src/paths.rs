@@ -12,6 +12,14 @@ pub struct Paths {
     pub assets: String,
 }
 
+impl PartialEq for Paths {
+    fn eq(&self, other: &Self) -> bool {
+        other.assets == self.assets &&
+        other.system == self.system &&
+        other.system == self.system
+    }
+}
+
 impl Paths {
     pub fn new(
         system: String,
