@@ -4,7 +4,7 @@ use std::fs;
 use std::ops::Not;
 use std::path::Path;
 
-#[derive(Clone, Debug)]
+#[derive(Clone, Debug, Eq)]
 pub struct Paths {
     pub system: String,
     pub save: String,
