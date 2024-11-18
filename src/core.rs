@@ -4,10 +4,12 @@ pub use crate::binding::binding_libretro::retro_pixel_format;
 pub use crate::environment::RetroEnvCallbacks;
 use crate::erro_handle::{ErroHandle, RetroLogLevel};
 use crate::graphic_api::GraphicApi;
+use crate::tools::game_tools::RomTools;
 use crate::{
     binding::binding_libretro::LibretroRaw, environment, managers::option_manager::OptionManager,
-    paths::Paths, system::System, tools,
+    paths::Paths, system::System,
 };
+use std::path::PathBuf;
 use std::sync::{Arc, Mutex};
 use uuid::Uuid;
 
@@ -19,6 +21,7 @@ pub struct CoreWrapper {
     /// Adicionei isso com o proposito de chamar futuras callbacks que serão adicionadas
     /// [RetroContext] dentro das callbacks fornecidas por [environment],
     pub retro_ctx_associated: Uuid,
+    pub rom_name: Mutex<String>,
     pub initialized: Mutex<bool>,
     pub game_loaded: Mutex<bool>,
     pub supports_bitmasks: Mutex<bool>,
@@ -60,6 +63,7 @@ impl CoreWrapper {
             support_no_game: Mutex::new(false),
             av_info: Arc::new(AvInfo::new(graphic_api)),
             supports_bitmasks: Mutex::new(false),
+            rom_name: Mutex::new("".to_string()),
             system,
             paths,
             options,
@@ -126,14 +130,13 @@ impl CoreWrapper {
             });
         }
 
-        match tools::game_tools::create_game_info(self, path) {
-            Ok(state) => {
-                *self.game_loaded.lock().unwrap() = state;
-                self.av_info.update_av_info(&self.raw);
-                Ok(state)
-            }
-            Err(e) => Err(e),
-        }
+        let state = RomTools::create_game_info(self, path)?;
+
+        *self.game_loaded.lock().unwrap() = state;
+        *self.rom_name.lock().unwrap() = RomTools::get_rom_name(&PathBuf::from(path))?;
+
+        self.av_info.update_av_info(&self.raw);
+        Ok(state)
     }
 
     pub fn reset(&self) -> Result<(), ErroHandle> {
@@ -179,15 +182,6 @@ impl CoreWrapper {
     }
 
     pub fn de_init(&self) -> Result<(), ErroHandle> {
-        if !*self.initialized.lock().unwrap() {
-            return Err(ErroHandle {
-                level: RetroLogLevel::RETRO_LOG_WARN,
-                message:
-                    "Nao e possível descarrega o núcleo, pois o mesmo ainda nao foi inicializado!"
-                        .to_string(),
-            });
-        }
-
         //Se uma *rom* estive carrega ela deve ser descarregada primeiro
         match self.unload_game() {
             Ok(..) => {}
@@ -249,6 +243,46 @@ impl CoreWrapper {
             self.raw.retro_unload_game();
         }
         *self.game_loaded.lock().unwrap() = false;
+
+        Ok(())
+    }
+
+    pub fn save_state(&self, slot: usize) -> Result<(), ErroHandle> {
+        if !*self.game_loaded.lock().unwrap() {
+            return Err(ErroHandle {
+                level: RetroLogLevel::RETRO_LOG_WARN,
+                message: "Uma rom precisa ser carregada primeiro".to_string(),
+            });
+        }
+
+        if !*self.initialized.lock().unwrap() {
+            return Err(ErroHandle {
+                level: RetroLogLevel::RETRO_LOG_ERROR,
+                message: "Para salva um state o núcleo deve esta inicializado".to_string(),
+            });
+        }
+
+        RomTools::create_save_state(self, slot)?;
+
+        Ok(())
+    }
+
+    pub fn load_state(&self, slot: usize) -> Result<(), ErroHandle> {
+        if !*self.game_loaded.lock().unwrap() {
+            return Err(ErroHandle {
+                level: RetroLogLevel::RETRO_LOG_WARN,
+                message: "Uma rom precisa ser carregada primeiro".to_string(),
+            });
+        }
+
+        if !*self.initialized.lock().unwrap() {
+            return Err(ErroHandle {
+                level: RetroLogLevel::RETRO_LOG_ERROR,
+                message: "Para carregar um state o núcleo deve esta inicializado".to_string(),
+            });
+        }
+
+        RomTools::load_save_state(self, slot)?;
 
         Ok(())
     }

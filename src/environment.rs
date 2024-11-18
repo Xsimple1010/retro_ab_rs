@@ -142,9 +142,9 @@ unsafe extern "C" fn rumble_callback(
     }
 }
 
-unsafe extern "C" fn core_log(level: retro_log_level, log: *const raw::c_char) {
+unsafe extern "C" fn core_log(_level: retro_log_level, _log: *const raw::c_char) {
     #[cfg(feature = "core_logs")]
-    println!("[{:?}]: {:?}", level, get_str_from_ptr(log));
+    println!("[{:?}]: {:?}", _level, get_str_from_ptr(_log));
 }
 
 unsafe extern "C" fn get_current_frame_buffer() -> usize {
