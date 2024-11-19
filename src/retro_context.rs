@@ -16,6 +16,12 @@ pub struct RetroContext {
     pub core: CoreWrapperIns,
 }
 
+impl Drop for RetroContext {
+    fn drop(&mut self) {
+        let _ = self.core.de_init();
+    }
+}
+
 impl RetroContext {
     pub fn new(
         core_path: &str,

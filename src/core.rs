@@ -35,12 +35,6 @@ pub struct CoreWrapper {
     pub callbacks: RetroEnvCallbacks,
 }
 
-impl Drop for CoreWrapper {
-    fn drop(&mut self) {
-        let _ = self.de_init();
-    }
-}
-
 impl CoreWrapper {
     pub fn new(
         retro_ctx_associated: Uuid,
