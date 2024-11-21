@@ -20,6 +20,9 @@ pub mod graphic_api;
 pub mod paths;
 pub mod system;
 pub mod test_tools;
+
+pub use managers::option_manager;
+
 pub use managers::args_manager;
 
 pub use binding::binding_libretro as retro_sys;
