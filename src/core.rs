@@ -30,7 +30,7 @@ pub struct CoreWrapper {
     pub av_info: Arc<AvInfo>,
     pub system: System,
     pub paths: Paths,
-    pub options: OptionManager,
+    pub options: Arc<OptionManager>,
     pub raw: Arc<LibretroRaw>,
     pub callbacks: RetroEnvCallbacks,
 }
@@ -48,7 +48,7 @@ impl CoreWrapper {
         let system = System::new(&raw);
 
         let options =
-            OptionManager::new(&paths.opt, system.info.library_name.lock().unwrap().clone());
+            Arc::new(OptionManager::new(&paths.opt, system.info.library_name.lock().unwrap().clone()));
 
         let core = Arc::new(CoreWrapper {
             raw: Arc::new(raw),
