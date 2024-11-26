@@ -69,7 +69,7 @@ pub fn delete_local_core_ctx() {
     }
 }
 
-fn force_stop() {
+fn _force_stop() {
     unsafe {
         if let Some(core_ctx) = &*addr_of!(CORE_CONTEXT) {
             let retro_ctx = RetroContext::get_from_id(&core_ctx.retro_ctx_associated)
@@ -154,7 +154,7 @@ unsafe extern "C" fn get_current_frame_buffer() -> usize {
             .video
             .graphic_api
             .fbo
-            .lock()
+            .read()
             .unwrap()
             .unwrap()
             .clone(),
@@ -353,8 +353,8 @@ pub unsafe extern "C" fn core_environment(cmd: raw::c_uint, data: *mut c_void) -
 
             match &*addr_of!(CORE_CONTEXT) {
                 Some(core_ctx) => {
-                    if !core_ctx.options.opts.lock().unwrap().is_empty() {
-                        *(data as *mut bool) = *core_ctx.options.updated.lock().unwrap()
+                    if !core_ctx.options.opts.read().unwrap().is_empty() {
+                        *(data as *mut bool) = *core_ctx.options.updated.read().unwrap()
                     } else {
                         *(data as *mut bool) = false;
                     }
@@ -382,23 +382,23 @@ pub unsafe extern "C" fn core_environment(cmd: raw::c_uint, data: *mut c_void) -
 
             match &*addr_of!(CORE_CONTEXT) {
                 Some(core_ctx) => {
-                    if core_ctx.options.opts.lock().unwrap().is_empty() {
+                    if core_ctx.options.opts.read().unwrap().is_empty() {
                         return true;
                     }
 
                     let raw_variable = *(data as *const retro_variable);
                     let key = get_str_from_ptr(raw_variable.key);
 
-                    for opt in &*core_ctx.options.opts.lock().unwrap() {
-                        if opt.key.lock().unwrap().eq(&key) {
-                            let new_value = make_c_string(&opt.selected.lock().unwrap()).unwrap();
+                    for opt in &*core_ctx.options.opts.read().unwrap() {
+                        if opt.key.read().unwrap().eq(&key) {
+                            let new_value = make_c_string(&opt.selected.read().unwrap()).unwrap();
 
                             let result = binding_log_interface::set_new_value_variable(
                                 data,
                                 new_value.as_ptr(),
                             );
 
-                            *core_ctx.options.updated.lock().unwrap() = false;
+                            *core_ctx.options.updated.write().unwrap() = false;
 
                             return result;
                         }
@@ -449,13 +449,13 @@ pub unsafe extern "C" fn core_environment(cmd: raw::c_uint, data: *mut c_void) -
                     let raw_ctr_infos =
                         *(data as *mut [retro_controller_info; MAX_CORE_CONTROLLER_INFO_TYPES]);
 
-                    core_ctx.system.ports.lock().unwrap().clear();
+                    core_ctx.system.ports.write().unwrap().clear();
 
                     for raw_ctr_info in raw_ctr_infos {
                         if raw_ctr_info.num_types != 0 {
                             let controller_info = ControllerInfo::from_raw(raw_ctr_info);
 
-                            core_ctx.system.ports.lock().unwrap().push(controller_info);
+                            core_ctx.system.ports.write().unwrap().push(controller_info);
                         } else {
                             break;
                         }
@@ -536,30 +536,30 @@ pub unsafe extern "C" fn core_environment(cmd: raw::c_uint, data: *mut c_void) -
 
             match &*addr_of!(CORE_CONTEXT) {
                 Some(core_ctx) => {
-                    *core_ctx.av_info.video.graphic_api.depth.lock().unwrap() = data.depth;
-                    *core_ctx.av_info.video.graphic_api.stencil.lock().unwrap() = data.stencil;
+                    *core_ctx.av_info.video.graphic_api.depth.write().unwrap() = data.depth;
+                    *core_ctx.av_info.video.graphic_api.stencil.write().unwrap() = data.stencil;
                     *core_ctx
                         .av_info
                         .video
                         .graphic_api
                         .bottom_left_origin
-                        .lock()
+                        .write()
                         .unwrap() = data.bottom_left_origin;
-                    *core_ctx.av_info.video.graphic_api.minor.lock().unwrap() = data.version_minor;
-                    *core_ctx.av_info.video.graphic_api.major.lock().unwrap() = data.version_major;
+                    *core_ctx.av_info.video.graphic_api.minor.write().unwrap() = data.version_minor;
+                    *core_ctx.av_info.video.graphic_api.major.write().unwrap() = data.version_major;
                     *core_ctx
                         .av_info
                         .video
                         .graphic_api
                         .cache_context
-                        .lock()
+                        .write()
                         .unwrap() = data.cache_context;
                     *core_ctx
                         .av_info
                         .video
                         .graphic_api
                         .debug_context
-                        .lock()
+                        .write()
                         .unwrap() = data.debug_context;
 
                     data.get_current_framebuffer = Some(get_current_frame_buffer);

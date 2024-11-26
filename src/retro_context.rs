@@ -80,17 +80,6 @@ impl RetroContext {
         # Pegar uma instância pelo seu id
 
         Use isso com moderação, pois pode quasar muita confusão no código.
-
-        ```
-        // inicia pelo menos uma instância
-        let ctx = RetroContext::new(core_path, paths, callbacks);
-
-        let same_ctx = RetroContext::get_from_id(&ctx.id)
-
-        if some_ctx.id == ctx.id {
-            println!('same id: {:?}', some_ctx.id);
-        }
-        ```
     "]
     pub fn get_from_id(id: &Uuid) -> Result<RetroCtxIns, ErroHandle> {
         unsafe {
@@ -112,6 +101,7 @@ impl RetroContext {
 mod retro_context {
     use crate::erro_handle::ErroHandle;
     use crate::test_tools::context::get_context;
+    use crate::retro_context::RetroContext;
 
     #[test]
     fn test_create_and_delete() -> Result<(), ErroHandle> {
@@ -134,6 +124,17 @@ mod retro_context {
             "O contexto id -> {:?} nao foi removido!",
             current_id
         );
+
+        Ok(())
+    }
+
+    #[test]
+    fn get_from_id()  -> Result<(), ErroHandle> {
+        let ctx = get_context()?;
+
+        let same_ctx = RetroContext::get_from_id(&ctx.id)?;
+
+        assert_eq!(same_ctx.id, ctx.id);
 
         Ok(())
     }

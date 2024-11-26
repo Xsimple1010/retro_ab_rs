@@ -27,7 +27,7 @@ fn get_full_path(path: &str) -> Result<PathBuf, ErroHandle> {
 }
 
 fn valid_rom_extension(ctx: &CoreWrapper, path: &Path) -> Result<(), ErroHandle> {
-    let valid_extensions = ctx.system.info.valid_extensions.lock().unwrap();
+    let valid_extensions = ctx.system.info.valid_extensions.read().unwrap();
     let path_str = path.extension().unwrap().to_str().unwrap();
 
     if !valid_extensions.contains(path_str) {
@@ -70,7 +70,7 @@ impl RomTools {
         let path = make_c_string(&f_path.to_str().unwrap())?;
         let mut size = 0;
 
-        let need_full_path = *ctx.system.info.need_full_path.lock().unwrap();
+        let need_full_path = *ctx.system.info.need_full_path.read().unwrap();
 
         if !need_full_path {
             let mut file = File::open(&f_path).unwrap();

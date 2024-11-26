@@ -24,7 +24,8 @@ impl ControllerInfo {
         *controller_info.num_types.lock().unwrap() = raw_ctr_info.num_types;
 
         let ctr_types = unsafe {
-            *(raw_ctr_info.types as *mut [retro_controller_description; MAX_CORE_CONTROLLER_INFO_TYPES])
+            *(raw_ctr_info.types
+                as *mut [retro_controller_description; MAX_CORE_CONTROLLER_INFO_TYPES])
         };
 
         for index in 0..raw_ctr_info.num_types {

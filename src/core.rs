@@ -48,7 +48,7 @@ impl CoreWrapper {
         let system = System::new(&raw);
 
         let options =
-            Arc::new(OptionManager::new(&paths.opt, system.info.library_name.lock().unwrap().clone()));
+            Arc::new(OptionManager::new(&paths.opt, system.info.library_name.read().unwrap().clone()));
 
         let core = Arc::new(CoreWrapper {
             raw: Arc::new(raw),

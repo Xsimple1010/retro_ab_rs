@@ -4,36 +4,36 @@ use crate::{
     binding::binding_libretro::{retro_game_geometry, retro_system_av_info, retro_system_timing},
     core::retro_pixel_format,
 };
-use std::sync::{Arc, Mutex};
+use std::sync::{Arc, Mutex, RwLock};
 
 #[derive(Default, Debug)]
 pub struct Timing {
     #[doc = "FPS of video content."]
-    pub fps: Mutex<f64>,
+    pub fps: RwLock<f64>,
     #[doc = "Sampling rate of audio."]
-    pub sample_rate: Mutex<f64>,
+    pub sample_rate: RwLock<f64>,
 }
 
 #[derive(Debug, Default)]
 pub struct Geometry {
     #[doc = "Nominal video width of game."]
-    pub base_width: Mutex<u32>,
+    pub base_width: RwLock<u32>,
 
     #[doc = "Nominal video height of game."]
-    pub base_height: Mutex<u32>,
+    pub base_height: RwLock<u32>,
 
     #[doc = "Maximum possible width of game."]
-    pub max_width: Mutex<u32>,
+    pub max_width: RwLock<u32>,
 
     #[doc = "Maximum possible height of game."]
-    pub max_height: Mutex<u32>,
+    pub max_height: RwLock<u32>,
 
     #[doc = "Nominal aspect ratio of game. If
     aspect_ratio is <= 0.0, an aspect ratio
     of base_width / base_height is assumed.
     A frontend could override this setting,
     if desired."]
-    pub aspect_ratio: Mutex<f32>,
+    pub aspect_ratio: RwLock<f32>,
 }
 
 #[derive(Debug)]
@@ -80,16 +80,11 @@ impl AvInfo {
         let raw_geometry = unsafe { *raw_geometry_ptr };
         let geometry_ctx = &self.video.geometry;
 
-        if raw_geometry.aspect_ratio != *geometry_ctx.aspect_ratio.lock().unwrap()
-            || raw_geometry.base_height != *geometry_ctx.base_height.lock().unwrap()
-            || raw_geometry.base_width != *geometry_ctx.base_width.lock().unwrap()
-        {
-            *geometry_ctx.aspect_ratio.lock().unwrap() = raw_geometry.aspect_ratio;
-            *geometry_ctx.base_height.lock().unwrap() = raw_geometry.base_height;
-            *geometry_ctx.base_width.lock().unwrap() = raw_geometry.base_width;
-            *geometry_ctx.max_height.lock().unwrap() = raw_geometry.max_height;
-            *geometry_ctx.max_width.lock().unwrap() = raw_geometry.max_width;
-        }
+        *geometry_ctx.aspect_ratio.write().unwrap() = raw_geometry.aspect_ratio;
+        *geometry_ctx.base_height.write().unwrap() = raw_geometry.base_height;
+        *geometry_ctx.base_width.write().unwrap() = raw_geometry.base_width;
+        *geometry_ctx.max_height.write().unwrap() = raw_geometry.max_height;
+        *geometry_ctx.max_width.write().unwrap() = raw_geometry.max_width;
     }
 
     fn _set_timing(&self, raw_system_timing: *const retro_system_timing) {
@@ -102,13 +97,13 @@ impl AvInfo {
         *self
             .timing
             .fps
-            .lock()
+            .write()
             .expect("Nao foi possível definir um novo valor para timing.fps") = timing.fps;
 
         *self
             .timing
             .sample_rate
-            .lock()
+            .write()
             .expect("Nao foi possível definir um novo valor para timing.sample_rate") =
             timing.sample_rate;
     }

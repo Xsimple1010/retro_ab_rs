@@ -32,7 +32,7 @@ fn main() -> Result<(), ErroHandle> {
             .video
             .geometry
             .base_height
-            .lock()
+            .read()
             .unwrap()
     );
     println!(
@@ -43,7 +43,7 @@ fn main() -> Result<(), ErroHandle> {
             .video
             .geometry
             .base_width
-            .lock()
+            .read()
             .unwrap()
     );
     println!(
@@ -54,7 +54,7 @@ fn main() -> Result<(), ErroHandle> {
             .video
             .geometry
             .aspect_ratio
-            .lock()
+            .read()
             .unwrap()
     );
     println!(
@@ -65,29 +65,29 @@ fn main() -> Result<(), ErroHandle> {
     println!("\n+++++sys info here+++++");
     println!(
         "library_name -> {:?}",
-        retro_ab.core().system.info.library_name.lock().unwrap()
+        retro_ab.core().system.info.library_name.read().unwrap()
     );
     println!(
         "library_version -> {:?}",
-        retro_ab.core().system.info.library_version.lock().unwrap()
+        retro_ab.core().system.info.library_version.read().unwrap()
     );
     println!(
         "valid_extensions -> {:?}",
-        retro_ab.core().system.info.valid_extensions.lock().unwrap()
+        retro_ab.core().system.info.valid_extensions.read().unwrap()
     );
     println!(
         "need_fullpath -> {:?}",
-        retro_ab.core().system.info.need_full_path.lock().unwrap()
+        retro_ab.core().system.info.need_full_path.read().unwrap()
     );
     println!(
         "block_extract -> {:?}",
-        retro_ab.core().system.info.block_extract.lock().unwrap()
+        retro_ab.core().system.info.block_extract.read().unwrap()
     );
 
     println!("\n+++++options here+++++");
     println!(
         "file path -> {:?} \n",
-        retro_ab.core().options.file_path.lock().unwrap()
+        retro_ab.core().options.file_path.read().unwrap()
     );
     // for opt in &*retro_ab.core().options.opts.lock().unwrap() {
     //     println!("key -> {:?}", opt.key.lock().unwrap());
@@ -128,24 +128,24 @@ fn main() -> Result<(), ErroHandle> {
     // }
 
     println!("\n+++++system+++++");
-    for subsystem in &*retro_ab.core().system.subsystem.lock().unwrap() {
-        println!("id -> {:?}", subsystem.id.lock().unwrap());
-        println!("ident -> {:?}", subsystem.ident.lock().unwrap());
-        println!("desc -> {:?}", subsystem.desc.lock().unwrap());
+    for subsystem in &*retro_ab.core().system.subsystem.read().unwrap() {
+        println!("id -> {:?}", subsystem.id.read().unwrap());
+        println!("ident -> {:?}", subsystem.ident.read().unwrap());
+        println!("desc -> {:?}", subsystem.desc.read().unwrap());
 
-        for rom in &*subsystem.roms.lock().unwrap() {
-            println!("rom: desc -> {:?}", rom.desc.lock().unwrap());
+        for rom in &*subsystem.roms.read().unwrap() {
+            println!("rom: desc -> {:?}", rom.desc.read().unwrap());
             println!(
                 "rom: valide extensions -> {:?}",
-                rom.valid_extensions.lock().unwrap()
+                rom.valid_extensions.read().unwrap()
             );
 
             println!(
                 "memory: extensions -> {:?}",
-                rom.memory.extension.lock().unwrap()
+                rom.memory.extension.read().unwrap()
             );
 
-            println!("memory: type -> {:?}", rom.memory.type_.lock().unwrap());
+            println!("memory: type -> {:?}", rom.memory.type_.read().unwrap());
         }
     }
 
@@ -166,7 +166,7 @@ fn main() -> Result<(), ErroHandle> {
             .video
             .geometry
             .max_height
-            .lock()
+            .read()
             .unwrap()
     );
     println!(
@@ -177,7 +177,7 @@ fn main() -> Result<(), ErroHandle> {
             .video
             .geometry
             .max_width
-            .lock()
+            .read()
             .unwrap()
     );
 
