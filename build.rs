@@ -1,14 +1,11 @@
-use std::{
-    env,
-    path::{PathBuf},
-};
+use std::{env, path::PathBuf};
 
 fn libretro_tool() {
     // let out_path = PathBuf::from("./src/binding");
 
     // Compile the C library
     cc::Build::new()
-        .file("src/libretro/log_interface.c")
+        .file("./src/libretro/log_interface.c")
         .compile("log_interface");
 
     // // Generate bindings
@@ -36,7 +33,7 @@ fn core_bindings() {
     let temp_path = PathBuf::from(env::var("OUT_DIR").unwrap()).join("temp_binding_lib_retro.rs");
 
     let _ = bindgen::Builder::default()
-        .header("src/libretro/libretro.h")
+        .header("./src/libretro/libretro.h")
         .clang_arg("-I.")
         .allowlist_type("(retro|RETRO)_.*")
         .allowlist_function("(retro|RETRO)_.*")
@@ -58,7 +55,6 @@ fn core_bindings() {
 }
 
 fn main() {
-
     core_bindings();
     libretro_tool();
 }

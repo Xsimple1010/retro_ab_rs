@@ -1,9 +1,0 @@
-{
-    "recommendations": [
-        "1yib.rust-bundle",
-        "hbenl.vscode-test-explorer",
-        "ms-vscode.test-adapter-converter",
-        "swellaby.vscode-rust-test-adapter",
-        "editorconfig.editorconfig"
-    ]
-}

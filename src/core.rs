@@ -24,7 +24,6 @@ pub struct CoreWrapper {
     pub rom_name: Mutex<String>,
     pub initialized: Mutex<bool>,
     pub game_loaded: Mutex<bool>,
-    pub supports_bitmasks: Mutex<bool>,
     pub support_no_game: Mutex<bool>,
     pub language: Mutex<retro_language>,
     pub av_info: Arc<AvInfo>,
@@ -47,8 +46,10 @@ impl CoreWrapper {
 
         let system = System::new(&raw);
 
-        let options =
-            Arc::new(OptionManager::new(&paths.opt, system.info.library_name.read().unwrap().clone()));
+        let options = Arc::new(OptionManager::new(
+            &paths.opt,
+            system.info.library_name.read().unwrap().clone(),
+        ));
 
         let core = Arc::new(CoreWrapper {
             raw: Arc::new(raw),
@@ -56,7 +57,6 @@ impl CoreWrapper {
             game_loaded: Mutex::new(false),
             support_no_game: Mutex::new(false),
             av_info: Arc::new(AvInfo::new(graphic_api)),
-            supports_bitmasks: Mutex::new(false),
             rom_name: Mutex::new("".to_string()),
             system,
             paths,
